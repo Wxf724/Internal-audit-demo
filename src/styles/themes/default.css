@@ -1,0 +1,96 @@
+﻿/* ═══════════ 工业企业官网默认主题 ═══════════ */
+:root {
+  color-scheme: light;
+
+  /* 表面色（卡片/弹窗/侧边栏背景 + 主文字） */
+  --surface: #ffffff;
+  --foreground: #172033;
+
+  --text-secondary: #607089;
+  --text-tertiary: #91a0b3;
+  --bg-soft: #f4f7fb;
+  --bg-hover: rgba(26, 86, 219, 0.07);
+  --border: #d9e2ef;
+  --border-light: #eaf0f7;
+
+  /* 主题色（accent） */
+  --accent: #0f5f9f;
+  --accent-hover: #0b4778;
+  --accent-foreground: #ffffff;
+  --focus-ring: rgba(15, 95, 159, 0.28);
+
+  --accent-soft: rgba(15, 95, 159, 0.10);
+  --accent-light: rgba(15, 95, 159, 0.07);
+  --accent-subtle: rgba(15, 95, 159, 0.045);
+  --accent-strong: rgba(15, 95, 159, 0.18);
+
+  /* 语义色 */
+  --success: #0f9f6e;
+  --success-soft: rgba(15, 159, 110, 0.12);
+  --success-light: rgba(15, 159, 110, 0.08);
+
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.12);
+  --danger-light: rgba(220, 38, 38, 0.08);
+
+  --warning: #b7791f;
+  --warning-soft: rgba(183, 121, 31, 0.14);
+  --warning-light: rgba(183, 121, 31, 0.08);
+
+  --info: #0e7490;
+  --info-soft: rgba(14, 116, 144, 0.12);
+  --info-light: rgba(14, 116, 144, 0.08);
+
+  /* Button 衍生色 */
+  --btn-info-hover: #155e75;
+  --btn-warn-hover: #92400e;
+  --btn-success-hover: #047857;
+
+  --btn-primary-hover: #0b4778;
+  --btn-primary-soft-border: rgba(15, 95, 159, 0.30);
+  --btn-primary-soft-text: var(--accent);
+
+  --btn-info-soft-border: rgba(14, 116, 144, 0.26);
+  --btn-info-soft-text: #155e75;
+
+  --btn-warn-soft-border: rgba(183, 121, 31, 0.28);
+  --btn-warn-soft-text: #92400e;
+
+  --btn-success-soft-border: rgba(15, 159, 110, 0.26);
+  --btn-success-soft-text: #047857;
+
+  --btn-danger-soft-border: rgba(220, 38, 38, 0.24);
+  --btn-danger-soft-text: #b91c1c;
+
+  --btn-default-text: #334155;
+
+  /* 会话气泡 */
+  --conversation-accent: #39d2ff;
+  --conversation-accent-muted: #8b5cf6;
+  --conversation-accent-border: rgba(97, 218, 255, 0.28);
+  --conversation-accent-bg: rgba(57, 210, 255, 0.12);
+  --conversation-accent-soft-bg: rgba(139, 92, 246, 0.12);
+
+  /* 圆角（HeroUI 母变量，所有 rounded-* 通过 calc 由此派生） */
+  --radius: 0.25rem; /* 4px：行政工作台使用紧凑直角圆角 */
+  --field-radius: 0.25rem; /* 4px：表单控件与表格对齐 */
+
+  /* 阴影（HeroUI 三级体系：surface→卡片 / overlay→弹窗 / field→输入框） */
+  --surface-shadow: 0 2px 8px rgba(15, 39, 66, 0.06);
+  --overlay-shadow: 0 14px 36px rgba(15, 39, 66, 0.16), 0 0 0 1px rgba(15, 95, 159, 0.08);
+  --field-shadow: 0 0 0 1px rgba(203, 213, 225, 0.9);
+
+  /* 兼容旧代码（指向 overlay） */
+  --shadow-dropdown: var(--overlay-shadow);
+
+  /* 表单（HeroUI field 令牌，对应 bg-field / text-field-foreground 等工具类） */
+  --field-background: var(--surface);
+  --field-foreground: var(--foreground);
+  --field-border: var(--border);
+  --field-border-width: 1px;
+  --field-placeholder: var(--text-secondary);
+
+  /* 滚动条 */
+  --scrollbar-thumb: rgba(96, 112, 137, 0.38);
+  --scrollbar-track: rgba(244, 247, 251, 0.8);
+}

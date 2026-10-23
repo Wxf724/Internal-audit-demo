@@ -1,0 +1,87 @@
+/* ═══════════ conv-agent 紫色主题 ═══════════ */
+.theme-convagent {
+  /* 表面色（卡片/弹窗/侧边栏背景 + 主文字） */
+  --surface: #ffffff;
+  --foreground: #111827;
+
+  /* 主题色 */
+  --accent: #7f22fe;
+  --accent-hover: #6c5dd3;
+  --accent-foreground: #ffffff;
+  --focus-ring: #a78bfa;
+
+  --accent-soft: rgba(122, 90, 248, 0.12);
+  --accent-light: rgba(122, 90, 248, 0.08);
+  --accent-subtle: rgba(122, 90, 248, 0.06);
+  --accent-strong: rgba(122, 90, 248, 0.16);
+
+  /* 语义色 */
+  --success: #10b981;
+  --success-soft: rgba(16, 185, 129, 0.12);
+  --success-light: rgba(16, 185, 129, 0.08);
+
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.12);
+  --danger-light: rgba(239, 68, 68, 0.08);
+
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.12);
+  --warning-light: rgba(245, 158, 11, 0.08);
+
+  --info: #1f48b0;
+  --info-soft: rgba(25, 83, 231, 0.12);
+  --info-light: rgba(14, 58, 233, 0.08);
+
+  /* Button 衍生色 */
+  --btn-info-hover: #1f48b0;
+  --btn-warn-hover: #d97706;
+  --btn-success-hover: #059669;
+
+  --btn-primary-hover: #8a35f0;
+  --btn-primary-soft-border: rgba(122, 90, 248, 0.25);
+  --btn-primary-soft-text: var(--accent-hover);
+
+  --btn-info-soft-border: rgba(14, 165, 233, 0.25);
+  --btn-info-soft-text: #0369a1;
+
+  --btn-warn-soft-border: rgba(245, 158, 11, 0.3);
+  --btn-warn-soft-text: #b45309;
+
+  --btn-success-soft-border: rgba(5, 150, 105, 0.3);
+  --btn-success-soft-text: #047857;
+
+  --btn-danger-soft-border: rgba(239, 68, 68, 0.25);
+  --btn-danger-soft-text: #dc2626;
+
+  --btn-default-text: #374151;
+
+  /* 会话气泡 */
+  --conversation-accent: #7f22fe;
+  --conversation-accent-muted: #6c5dd3;
+  --conversation-accent-border: rgb(221 214 254);
+  --conversation-accent-bg: rgb(237 233 254 / 0.7);
+  --conversation-accent-soft-bg: rgb(237 233 254);
+
+  /* 圆角（HeroUI 母变量，可独立于蓝色主题调整） */
+  --radius: 0.5rem;          /* 8px → 与蓝色主题一致；如需更圆润可加大 */
+  --field-radius: 0.75rem;   /* 12px → 表单控件圆角 */
+
+  /* 阴影（HeroUI 三级体系：surface→卡片 / overlay→弹窗 / field→输入框） */
+  --surface-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --overlay-shadow: 0 18px 45px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(122, 90, 248, 0.08);
+  --field-shadow: 0 1px 3px rgba(122, 90, 248, 0.06);
+
+  /* 兼容旧代码（指向 overlay） */
+  --shadow-dropdown: var(--overlay-shadow);
+
+  /* 表单（HeroUI field 令牌，对应 bg-field / text-field-foreground 等工具类） */
+  --field-background: var(--surface);
+  --field-foreground: var(--foreground);
+  --field-border: var(--border);
+  --field-border-width: 1px;
+  --field-placeholder: var(--text-secondary);
+
+  /* 滚动条 */
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-track: transparent;
+}

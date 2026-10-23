@@ -1,0 +1,93 @@
+/* ── 组件手册 Markdown 排版 ────────────────────────────── */
+
+.prose-readme {
+  color: #1e293b;
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  word-break: break-word;
+}
+
+.prose-readme > :first-child { margin-top: 0 !important; }
+.prose-readme > :last-child { margin-bottom: 0 !important; }
+
+.prose-readme h1 { font-size: 1.5em; font-weight: 800; margin: 1.5em 0 0.6em; color: #0f172a; }
+.prose-readme h2 { font-size: 1.15em; font-weight: 700; margin: 1.4em 0 0.5em; padding-bottom: 0.35em; border-bottom: 1px solid #e2e8f0; color: #0f172a; }
+.prose-readme h3 { font-size: 1.05em; font-weight: 700; margin: 1.2em 0 0.4em; color: #334155; }
+.prose-readme h4 { font-size: 1em; font-weight: 700; margin: 1em 0 0.3em; }
+
+.prose-readme p { margin: 0.6em 0; }
+
+.prose-readme ul,
+.prose-readme ol { margin: 0.5em 0; padding-left: 1.6em; }
+.prose-readme ul { list-style-type: disc; }
+.prose-readme ol { list-style-type: decimal; }
+.prose-readme li { margin: 0.2em 0; }
+
+.prose-readme a { color: var(--accent); text-decoration: underline; }
+.prose-readme a:hover { color: var(--accent-hover); }
+
+.prose-readme strong { font-weight: 700; color: #0f172a; }
+
+.prose-readme code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.prose-readme pre {
+  margin: 0.8em 0;
+  padding: 1em 1.2em;
+  border-radius: 10px;
+  background: #1e293b;
+  color: #e2e8f0;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.prose-readme pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+.prose-readme blockquote {
+  margin: 0.8em 0;
+  padding: 0.5em 1em;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  border-radius: 0 6px 6px 0;
+  color: #475569;
+}
+
+.prose-readme table {
+  width: 100%;
+  margin: 0.8em 0;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.prose-readme th,
+.prose-readme td {
+  padding: 0.5em 0.8em;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.prose-readme th {
+  background: #f8fafc;
+  font-weight: 700;
+  color: #334155;
+}
+
+.prose-readme hr {
+  margin: 1.5em 0;
+  border: none;
+  border-top: 1px solid #e2e8f0;
+}
+
+.prose-readme img { max-width: 100%; border-radius: 8px; }

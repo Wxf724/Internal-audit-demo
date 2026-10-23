@@ -1,0 +1,359 @@
+@import '@heroui/styles';
+@import './themes/default.css';
+@import './themes/conv-agent.css';
+
+:root {
+  /* ═══════════ 结构变量（共享，不随主题变化） ═══════════ */
+  --font-sans: 'Noto Sans SC', sans-serif;
+
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --bg-soft: #f9fafb;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+
+  /* 控件尺寸 */
+  --control-height-xs: 1.75rem; /* 28px */
+  --control-height-sm: 2.125rem; /* 34px */
+  --control-height-md: 2.375rem; /* 38px */
+  --control-height-lg: 2.5rem; /* 40px */
+}
+
+@layer components {
+  [data-slot='input-wrapper'],
+  [data-slot='input-wrapper'][data-focus-visible='true'] {
+    box-shadow: var(--field-shadow) !important;
+  }
+  .input {
+    @apply shadow-none;
+    box-shadow: inset 0 0 0 1px var(--border);
+
+    &:focus-visible {
+      @apply shadow-none ring-0;
+    }
+  }
+
+  /* TextArea 聚焦：1px 主题色描边，覆盖 HeroUI 默认 2px 蓝色 ring */
+  .textarea:focus,
+  .textarea[data-focused='true'] {
+    --tw-ring-color: var(--accent) !important;
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 1px var(--tw-ring-color) !important;
+    border-color: var(--accent) !important;
+    outline: none !important;
+  }
+
+  /* InputGroup：默认与单行 Input 一致；聚焦时覆盖 HeroUI ring-2，改为 1px 描边，避免光晕过粗 */
+  .input-group {
+    box-shadow: none !important;
+  }
+  .input-group__prefix {
+    border-right: none;
+  }
+
+  .input-group:focus-within,
+  .input-group:has([data-slot='input-group-input']:focus),
+  .input-group:has([data-slot='input-group-textarea']:focus) {
+    outline: none !important;
+    box-shadow: none;
+  }
+
+  /* SliderBar：去掉 HeroUI 轨道左右 0.75rem 留白，进度可贴边 */
+  .slider[data-orientation='horizontal'] .slider-bar__track {
+    height: 0.5rem !important;
+    border-left-width: 0 !important;
+    border-right-width: 0 !important;
+  }
+
+  .slider[data-orientation='horizontal'] .slider-bar__thumb {
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+    min-width: 0;
+  }
+
+  /* ── Markdown 正文排版（.md-body）────────────────────────────── */
+  .md-body {
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    word-break: break-word;
+  }
+
+  .md-body > :first-child {
+    margin-top: 0 !important;
+  }
+
+  .md-body > :last-child {
+    margin-bottom: 0 !important;
+  }
+
+  .md-body h1,
+  .md-body h2,
+  .md-body h3,
+  .md-body h4,
+  .md-body h5,
+  .md-body h6 {
+    font-weight: 700;
+    line-height: 1.35;
+    margin-top: 1.25em;
+    margin-bottom: 0.5em;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+
+  .md-body h1 {
+    font-size: 1.25em;
+  }
+
+  .md-body h2 {
+    font-size: 1.125em;
+    padding-bottom: 0.35em;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .md-body h3 {
+    font-size: 1.0625em;
+    color: #1e293b;
+  }
+
+  .md-body h4 {
+    font-size: 1em;
+  }
+
+  .md-body h5 {
+    font-size: 0.9375em;
+    color: #475569;
+  }
+
+  .md-body h6 {
+    font-size: 0.875em;
+    color: #64748b;
+  }
+
+  .md-body p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    white-space: pre-wrap;
+  }
+
+  .md-body ul,
+  .md-body ol {
+    margin: 0.65em 0;
+    padding-left: 1.5em;
+  }
+
+  .md-body ul {
+    list-style-type: disc;
+  }
+
+  .md-body ul ul {
+    list-style-type: circle;
+    margin: 0.25em 0;
+  }
+
+  .md-body ul ul ul {
+    list-style-type: square;
+  }
+
+  .md-body ol {
+    list-style-type: decimal;
+  }
+
+  .md-body ol ol {
+    list-style-type: lower-alpha;
+    margin: 0.25em 0;
+  }
+
+  .md-body li {
+    margin: 0.35em 0;
+    padding-left: 0.15em;
+  }
+
+  .md-body li::marker {
+    color: #64748b;
+  }
+
+  .md-body ul > li::marker {
+    color: var(--accent);
+  }
+
+  .md-body li > p {
+    margin: 0;
+  }
+
+  .md-body li > p + p {
+    margin-top: 0.45em;
+  }
+
+  .md-body li > ul,
+  .md-body li > ol {
+    margin-top: 0.35em;
+    margin-bottom: 0.15em;
+  }
+
+  .md-body input[type='checkbox'] {
+    margin: 0 0.45em 0 0;
+    accent-color: var(--accent);
+    vertical-align: middle;
+  }
+
+  .md-body a {
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: var(--accent-soft);
+    text-underline-offset: 2px;
+    word-break: break-word;
+    transition:
+      color 0.15s ease,
+      text-decoration-color 0.15s ease;
+  }
+
+  .md-body a:hover {
+    color: var(--accent-hover);
+    text-decoration-color: var(--accent-strong);
+  }
+
+  .md-body strong {
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .md-body em {
+    font-style: italic;
+    color: #475569;
+  }
+
+  .md-body del {
+    color: #94a3b8;
+    text-decoration-thickness: 1px;
+  }
+
+  .md-body blockquote {
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 0.65em 0.85em;
+    margin: 0.85em 0;
+    background: linear-gradient(90deg, var(--accent-light) 0%, rgb(247 249 255 / 0.95) 100%);
+    color: #475569;
+  }
+
+  .md-body blockquote > :first-child {
+    margin-top: 0;
+  }
+
+  .md-body blockquote > :last-child {
+    margin-bottom: 0;
+  }
+
+  .md-body blockquote p {
+    color: #475569;
+  }
+
+  .md-body hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 1.25em 0;
+  }
+
+  .md-body code {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    padding: 0.12em 0.4em;
+    font-size: 0.8125em;
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+    color: #b42318;
+  }
+
+  .md-body pre {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0.85em 1em;
+    overflow-x: auto;
+    margin: 0.85em 0;
+  }
+
+  .md-body pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: #1e293b;
+    font-size: 0.875em;
+    line-height: 1.65;
+  }
+
+  .md-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin: 0.5em 0;
+  }
+
+  /* 表格 */
+  .md-body .md-table-scroll {
+    max-width: 100%;
+    margin: 0.85em 0;
+    overflow-x: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+
+  .md-body .md-table-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  .md-body table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+  }
+
+  .md-body th,
+  .md-body td {
+    min-width: 80px;
+    max-width: 240px;
+    border-bottom: 1px solid #eef2f6;
+    padding: 0.7em 0.85em;
+    text-align: left;
+    vertical-align: top;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .md-body th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .md-body td {
+    color: #334155;
+    background: #ffffff;
+  }
+
+  .md-body tbody tr:nth-child(even) td {
+    background: #fafbfc;
+  }
+
+  .md-body tbody tr:hover td {
+    background: #f7f9ff;
+  }
+
+  .md-body tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  /* 深色区域细滚动条（HeroUI 标准方式：scrollbar-width + scrollbar-color） */
+  .dark-scrollbar {
+    color-scheme: dark;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+}
