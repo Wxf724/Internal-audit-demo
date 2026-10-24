@@ -71,6 +71,18 @@ export default function AuditCenter() {
   const linkedIssue = issues.find((item) => item.id === (linkedRectification?.issueId ?? selected?.businessId))
   const linkedPlan = plans.find((item) => item.id === selected?.businessId)
   const checks = selected ? reviewChecks(selected) : []
+  const extraSection = selected?.type === '异议审核' && linkedIssue?.objection?.reason
+    ? '异议内容'
+    : selected?.type === '整改方案审批' && linkedRectification?.planContent
+      ? '整改方案'
+      : ''
+  // 材料目录与正文小节保持一致，避免目录标题与实际章节对不上
+  const sections = useMemo(() => {
+    if (!selected) return []
+    if (selected.type === '计划校审') return ['计划基本信息', '检查依据与目标', '审批链路']
+    return ['业务背景与范围', '问题事实与制度依据', ...(extraSection ? [extraSection] : []), '整改措施及复核结论', '关联底稿与取证材料']
+  }, [selected, extraSection])
+  const sectionNo = (index: number) => `${['一', '二', '三', '四', '五', '六'][index] ?? String(index + 1)}、`
 
   useEffect(() => {
     setOpinion('')
@@ -110,15 +122,15 @@ export default function AuditCenter() {
         <>
           <h3>{linkedPlan.name}</h3>
           <p className="icm-audit-paper-sub">计划编号：{linkedPlan.id}　检查类型：{linkedPlan.type}　来源：{linkedPlan.source}</p>
-          <h4>一、计划基本信息</h4>
+          <h4>{sectionNo(0)}计划基本信息</h4>
           <p><b>受检单位：</b>{linkedPlan.unit}（{linkedPlan.unitLevel}）</p>
           <p><b>检查领域：</b>{linkedPlan.checkDomain || '-'}　<b>风险主题：</b>{linkedPlan.riskTheme}</p>
           <p><b>计划周期：</b>{linkedPlan.period}　<b>预算工作量：</b>{linkedPlan.budget}</p>
           <p><b>负责人：</b>{linkedPlan.owner}</p>
-          <h4>二、检查依据与目标</h4>
+          <h4>{sectionNo(1)}检查依据与目标</h4>
           <p><b>依据：</b>{linkedPlan.basis}</p>
           <p><b>目标：</b>{linkedPlan.objective}</p>
-          <h4>三、审批链路</h4>
+          <h4>{sectionNo(2)}审批链路</h4>
           <div className="icm-audit-reference-list">
             {linkedPlan.approvals.map((node) => (
               <button type="button" key={node.node}><FileText size={14} />{node.node} · {node.owner} · {node.status}</button>
@@ -128,32 +140,32 @@ export default function AuditCenter() {
       )
     }
 
+    const offset = extraSection ? 1 : 0
     return (
       <>
-        <h3>{selected.type === '报告审核' ? linkedReport?.title : selected.title}</h3>
-        <p className="icm-audit-paper-sub">检查领域：{linkedIssue?.basis?.split('第')[0] ?? '内控检查'}　业务编号：{selected.businessId}</p>
-        <h4>一、业务背景与范围</h4>
+        <p className="icm-audit-paper-sub icm-audit-paper-meta">检查领域：{linkedIssue?.basis?.split('第')[0] ?? '内控检查'}　业务编号：{selected.businessId}　当前节点：{selected.node}</p>
+        <h4>{sectionNo(0)}业务背景与范围</h4>
         <p>本事项来源于年度内控检查计划，围绕关键业务流程、控制执行及整改闭环情况开展复核。审核材料应与检查底稿、取证资料和责任单位反馈保持一致。</p>
-        <h4>二、问题事实与制度依据</h4>
+        <h4>{sectionNo(1)}问题事实与制度依据</h4>
         <p>{linkedIssue?.fact ?? '请在原业务页面补充问题事实后办理审核。'}</p>
         <p><b>制度依据：</b>{linkedIssue?.basis ?? '待补充'}</p>
-        {selected.type === '异议审核' && linkedIssue?.objection?.reason ? (
+        {extraSection === '异议内容' && linkedIssue?.objection ? (
           <>
-            <h4>三、异议内容</h4>
+            <h4>{sectionNo(2)}异议内容</h4>
             <p><b>异议理由：</b>{linkedIssue.objection.reason}</p>
             <p><b>提出单位：</b>{linkedIssue.objection.raisedBy}　<b>提出时间：</b>{linkedIssue.objection.raisedAt}</p>
           </>
         ) : null}
-        {selected.type === '整改方案审批' && linkedRectification?.planContent ? (
+        {extraSection === '整改方案' && linkedRectification?.planContent ? (
           <>
-            <h4>三、整改方案</h4>
+            <h4>{sectionNo(2)}整改方案</h4>
             <p>{linkedRectification.planContent}</p>
           </>
         ) : null}
-        <h4>{selected.type === '整改方案审批' ? '四' : selected.type === '异议审核' ? '四' : '三'}、整改措施及复核结论</h4>
+        <h4>{sectionNo(2 + offset)}整改措施及复核结论</h4>
         <p>{linkedIssue?.suggestion ?? '本次为问题确认，请确认事实、依据和整改方向。'}</p>
         <p><b>整改进度：</b>{linkedRectification ? `${linkedRectification.progress}%` : '待发起整改'}　<b>复核结论：</b>{linkedRectification?.verifyConclusion ?? '待确认'}</p>
-        <h4>四、关联材料</h4>
+        <h4>{sectionNo(3 + offset)}关联底稿与取证材料</h4>
         <div className="icm-audit-reference-list">
           {[linkedIssue?.workpaperId, ...(linkedIssue?.evidenceIds ?? []), linkedRectification?.id, linkedReport?.id].filter(Boolean).map((id) => <button type="button" key={id} onClick={() => navigate(selected.route)}><FileText size={14} />{id}</button>)}
         </div>
@@ -195,7 +207,7 @@ export default function AuditCenter() {
           {selected ? <>
             <div className="icm-audit-document-head"><div><span>{selected.type} · {selected.id}</span><h2>{selected.title}</h2><p>发起单位：{selected.applicant}　提交时间：{selected.submittedAt}　当前节点：{selected.node}</p></div><Tag tone={tone(selected.status)}>{selected.status}</Tag></div>
             <div className="icm-audit-document-body">
-              <aside className="icm-audit-outline"><strong>材料目录</strong><button className="active" type="button">一、业务背景与范围</button><button type="button">二、问题事实与制度依据</button><button type="button">三、整改措施及复核结论</button><button type="button">四、关联底稿与取证材料</button></aside>
+              <aside className="icm-audit-outline"><strong>材料目录</strong>{sections.map((title, index) => <button className={index === 0 ? 'active' : ''} type="button" key={title}>{sectionNo(index)}{title}</button>)}</aside>
               <article className="icm-audit-paper">
                 {renderDocumentBody()}
               </article>
@@ -214,7 +226,7 @@ export default function AuditCenter() {
               <DetailLine label="关联整改" value={linkedRectification?.id ?? '待发起'} />
               <DetailLine label="材料数量" value={`${(linkedIssue?.evidenceIds.length ?? 0) + (linkedIssue?.workpaperId ? 1 : 0)} 份`} />
             </div>
-            <textarea className="icm-input icm-audit-opinion-input" value={opinion} onChange={(event) => setOpinion(event.target.value)} placeholder="填写审核意见；退回时请明确需补充的材料或修改要求。" />
+            <textarea className="icm-input icm-audit-opinion-input" value={opinion} onChange={(event) => setOpinion(event.target.value)} placeholder="填写审核意见；退回时请说明需补充的材料。" />
             <div className="icm-actions icm-audit-review-actions"><Button type="default-soft" onClick={() => navigate(selected.route)}>查看原业务</Button>{selected.status === '待处理' ? <><Button type="default-soft" icon={<RotateCcw size={14} />} onClick={handleReturn}>退回修改</Button><Button type="primary" icon={<CheckCircle2 size={14} />} onClick={handleApprove}>审核通过</Button></> : <Tag tone={tone(selected.status)}>{selected.status}</Tag>}</div>
             {selected.opinion ? <div className="icm-audit-opinion">历史意见：{selected.opinion}</div> : null}
           </> : null}

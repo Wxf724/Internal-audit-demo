@@ -1,4 +1,4 @@
-﻿import { useEffect, type ReactNode } from 'react'
+﻿import { useEffect, type CSSProperties, type ReactNode } from 'react'
 import { Button } from '@/components'
 
 export type Tone = 'blue' | 'cyan' | 'green' | 'amber' | 'red' | 'gray'
@@ -19,9 +19,10 @@ const css = `
 .icm-segment{display:inline-flex;gap:3px;border:1px solid #d7e2f0;background:#f7faff;border-radius:8px;padding:3px}
 .icm-segment button{height:28px;border:0;border-radius:6px;background:transparent;color:#56677f;font-size:12px;padding:0 10px;cursor:pointer}
 .icm-segment button.active{background:#155bd4;color:#fff;font-weight:700}
-.icm-grid{display:grid;gap:12px}.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.cols-7{grid-template-columns:repeat(7,minmax(0,1fr))}
+.icm-grid{display:grid;gap:12px}.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.cols-6{grid-template-columns:repeat(6,minmax(0,1fr))}.cols-7{grid-template-columns:repeat(7,minmax(0,1fr))}
 .icm-card{background:#fff;border:1px solid #dbe5f1;border-radius:8px;box-shadow:0 10px 24px rgba(20,38,72,.06);min-width:0}
 .icm-card{display:flex;flex-direction:column}.icm-card-body{flex:1}
+.icm-card-fill{height:100%;min-height:0}.icm-card-fill>.icm-card-body.icm-card-body-fill{flex:1;min-height:0;display:flex;flex-direction:column}
 .icm-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #e6edf7;padding:12px 14px}
 .icm-card-title{font-weight:800;color:#172033;font-size:14px}.icm-card-note{color:#748299;font-size:12px}
 .icm-card-body{padding:14px}
@@ -52,7 +53,10 @@ const css = `
 .icm-screen .icm-card{background:#0c2441;border-color:#1d4976;box-shadow:none}.icm-screen .icm-card-title,.icm-screen .icm-table td{color:#eaf6ff}.icm-screen .icm-card-note,.icm-screen .icm-table th{color:#9bc5e8}.icm-screen .icm-table th{background:#102e50;border-color:#1d4976}.icm-screen .icm-table td{border-color:#193d66}
 .heat-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}.heat-cell{height:54px;border-radius:6px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;font-weight:800;color:#fff}
 .bar-row{display:grid;grid-template-columns:90px minmax(0,1fr) 42px;gap:8px;align-items:center;margin:9px 0;font-size:12px}.bar-track{height:10px;background:#e7edf6;border-radius:999px;overflow:hidden}.bar-fill{height:100%;border-radius:999px;background:#155bd4}
-@media(max-width:1100px){.cols-4,.cols-3,.cols-2,.icm-report-source-grid{grid-template-columns:1fr}.icm-page-header{display:block}.icm-actions{margin-top:10px}.icm-input{min-width:160px}}
+@media(max-width:1440px){.cols-6{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1100px){.cols-4,.cols-3,.cols-2,.icm-report-source-grid{grid-template-columns:1fr}.cols-5,.cols-6{grid-template-columns:repeat(3,minmax(0,1fr))}.icm-page-header{display:block}.icm-actions{margin-top:10px}.icm-input{min-width:160px}}
+@media(max-width:720px){.cols-5,.cols-6{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.cols-5,.cols-6{grid-template-columns:1fr}}
 .icm-chunk-panel{display:flex;flex-direction:column;gap:10px}
 .icm-chunk-list{display:grid;gap:10px;max-height:calc(100vh - 220px);overflow:auto}
 .icm-chunk-card{border:1px solid #dbe5f1;border-radius:8px;background:#fbfdff;padding:10px 12px}
@@ -132,17 +136,21 @@ export function Card({
   children,
   action,
   compact,
+  fill,
+  bodyStyle,
 }: {
   title: string
   note?: string
   children: ReactNode
   action?: ReactNode
   compact?: boolean
+  fill?: boolean
+  bodyStyle?: CSSProperties
 }) {
   const pad = compact ? { padding: '5px 9px' } : undefined
   const bodyPad = compact ? { padding: '6px 9px' } : undefined
   return (
-    <section className="icm-card">
+    <section className={`icm-card${fill ? ' icm-card-fill' : ''}`}>
       <div className="icm-card-head" style={pad}>
         <div>
           <div className="icm-card-title">{title}</div>
@@ -150,7 +158,7 @@ export function Card({
         </div>
         {action}
       </div>
-      <div className="icm-card-body" style={bodyPad}>{children}</div>
+      <div className={`icm-card-body${fill ? ' icm-card-body-fill' : ''}`} style={{ ...bodyPad, ...bodyStyle }}>{children}</div>
     </section>
   )
 }

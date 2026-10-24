@@ -1,10 +1,10 @@
 ﻿import { CheckCircle2, AlertTriangle, TrendingUp } from 'lucide-react'
 import type { EChartsOption } from 'echarts'
-import ReactECharts from 'echarts-for-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { cockpit, issues, overview, workpapers, rectifications, plans } from '../data'
 import { Card, Tag, type Tone } from '../components/IcmPageKit'
+import { EChart } from '../components/IcmChart'
 
 const S = {
   red: issues.filter((i) => i.level === '重大').length,
@@ -123,10 +123,10 @@ export default function VisualCockpit() {
 
       {/* heatmap + chain */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(300px,.42fr)', gap: 8, minHeight: 0 }}>
-        <Card title="风险热力分布" compact>
+        <Card title="风险热力分布" compact fill bodyStyle={{ padding: '4px 8px 4px' }}>
           <HeatDist />
         </Card>
-        <Card title="自动闭环进度" compact>
+        <Card title="自动闭环进度" compact fill>
           <LoopProgress />
         </Card>
       </div>
@@ -142,13 +142,19 @@ export default function VisualCockpit() {
         </div>
 
         {/* middle: trend */}
-        <Card title="风险趋势" compact>
+        <Card
+          title="风险趋势"
+          compact
+          fill
+          bodyStyle={{ padding: '2px 8px 6px' }}
+          action={<span style={{ color: '#8794a5', fontSize: 10, whiteSpace: 'nowrap' }}>{activeRange.label} · 左轴风险指数 / 右轴事项件数</span>}
+        >
           <TrendChart months={activeRange.months} />
         </Card>
 
         {/* right: alerts */}
-        <Card title="实时预警" compact>
-          <div style={{ height: '100%', display: 'grid', gridTemplateRows: `repeat(${LIVE_ALERTS.length}, minmax(0, 1fr))`, gap: 5, minHeight: 0 }}>
+        <Card title="实时预警" compact fill>
+          <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateRows: `repeat(${LIVE_ALERTS.length}, minmax(0, 1fr))`, gap: 5 }}>
             {LIVE_ALERTS.map((a, k) => (
               <div key={k} style={{ display: 'grid', gridTemplateColumns: '54px minmax(0,1fr) 72px 74px', alignItems: 'center', gap: 8, minHeight: 0, border: '1px solid #e2eaf5', borderRadius: 7, background: '#fbfdff', padding: '4px 8px' }}>
                 <Tag tone={alertTone(a.level)}>{a.level}</Tag>
@@ -176,10 +182,11 @@ export default function VisualCockpit() {
 
 function HeatDist() {
   const opt: EChartsOption = {
-    grid: { left: 34, right: 12, top: 20, bottom: 32 },
+    grid: { left: 4, right: 4, top: 18, bottom: 2, containLabel: true },
     xAxis: {
       type: 'category', data: HEAT_ALL.map((h) => h.domain),
-      axisLabel: { color: '#64748b', fontSize: 10 }, axisTick: { show: false },
+      axisLabel: { color: '#64748b', fontSize: 10, interval: 0, overflow: 'truncate', width: 44 }, axisTick: { show: false },
+      axisLine: { lineStyle: { color: '#dbe3ed' } },
     },
     yAxis: {
       type: 'value', min: 0, max: 100,
@@ -200,18 +207,18 @@ function HeatDist() {
         value: h.score,
         itemStyle: { color: LVL[h.level], borderRadius: [3, 3, 0, 0] },
       })),
-      barMaxWidth: 30,
+      barMaxWidth: 26,
       label: { show: true, position: 'top', color: '#0b1f43', fontSize: 10, fontWeight: 800 },
     }],
   }
-  return <ReactECharts option={opt} style={{ height: 160 }} />
+  return <EChart option={opt} />
 }
 
 function LoopProgress() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, height: '100%', justifyContent: 'space-between' }}>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'space-between', padding: '2px 0' }}>
       {overview.chain.map((c) => (
-        <div key={c.key} style={{ display: 'grid', gridTemplateColumns: '64px minmax(0,1fr) 36px', alignItems: 'center', gap: 6, fontSize: 11 }}>
+        <div key={c.key} style={{ display: 'grid', gridTemplateColumns: '64px minmax(0,1fr) 38px', alignItems: 'center', gap: 6, fontSize: 11 }}>
           <span style={{ fontWeight: 800, color: '#334155', textAlign: 'right' }}>{c.label}</span>
           <span style={{ height: 8, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden' }}>
             <span style={{ display: 'block', height: '100%', width: c.percent + '%', borderRadius: 999, background: c.percent >= 100 ? '#16a34a' : c.percent >= 70 ? '#155bd4' : c.percent >= 40 ? '#f59e0b' : '#94a3b8' }} />
@@ -225,19 +232,62 @@ function LoopProgress() {
 
 function TrendChart({ months: rangeMonths }: { months: number }) {
   const visibleTrends = overview.trends.slice(-Math.min(rangeMonths, overview.trends.length))
-  const months = visibleTrends.map((t) => t.month.slice(5))
+  const months = visibleTrends.map((t) => t.month.slice(5) + '月')
+  // 区间较短时点位稀疏，直接标注数值，避免只看得到几个点
+  const dense = visibleTrends.length <= 3
+  const axisLabel = { color: '#64748b', fontSize: 11 }
   const opt: EChartsOption = {
-    grid: { left: 34, right: 12, top: 28, bottom: 24, containLabel: true },
-    xAxis: { type: 'category', data: months, axisLabel: { color: '#64748b', fontSize: 10 }, axisTick: { show: false } },
-    yAxis: { type: 'value', axisLabel: { color: '#64748b', fontSize: 10 }, splitLine: { lineStyle: { color: '#e7edf6', type: 'dashed' } } },
-    series: [
-      { name: '风险指数', type: 'line', data: visibleTrends.map((t) => t.risk), smooth: true, lineStyle: { color: '#ef4444', width: 1.5 }, itemStyle: { color: '#ef4444' }, symbol: 'circle', symbolSize: 3 },
-      { name: '发现问题', type: 'line', data: visibleTrends.map((t) => t.findings), smooth: true, lineStyle: { color: '#f59e0b', width: 1.5 }, itemStyle: { color: '#f59e0b' }, symbol: 'circle', symbolSize: 3 },
-      { name: '已整改', type: 'line', data: visibleTrends.map((t) => t.rectified), smooth: true, lineStyle: { color: '#22c55e', width: 1.5 }, itemStyle: { color: '#22c55e' }, symbol: 'circle', symbolSize: 3 },
+    // 风险指数为 0-100 综合指数，发现问题/已整改为事项件数，量纲不同，采用左右双轴，避免件数被压成贴地直线
+    grid: { left: 4, right: 22, top: 30, bottom: 2, containLabel: true },
+    legend: {
+      top: 0, left: 'center', itemWidth: 14, itemHeight: 8, itemGap: 16,
+      textStyle: { color: '#475569', fontSize: 11 },
+    },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(15,39,66,.94)', borderWidth: 0, padding: [8, 10],
+      textStyle: { color: '#eaf3fa', fontSize: 12 },
+      axisPointer: { type: 'line', lineStyle: { color: '#9ec5e2', type: 'dashed' } },
+    },
+    xAxis: {
+      type: 'category', boundaryGap: true, data: months,
+      axisLabel, axisTick: { show: false }, axisLine: { lineStyle: { color: '#dbe3ed' } },
+    },
+    yAxis: [
+      {
+        type: 'value', min: 0, max: 100,
+        axisLabel: { ...axisLabel, color: '#b91c1c' },
+        splitLine: { lineStyle: { color: '#e7edf6', type: 'dashed' } },
+      },
+      {
+        type: 'value', minInterval: 1,
+        axisLabel: { ...axisLabel, color: '#0f5f9f' },
+        splitLine: { show: false },
+      },
     ],
-    legend: { data: ['风险指数', '发现问题', '已整改'], textStyle: { color: '#64748b', fontSize: 10 }, right: 0, top: 0 },
-    tooltip: { trigger: 'axis' },
+    series: [
+      {
+        name: '风险指数', type: 'line', yAxisIndex: 0, smooth: true, symbol: 'circle', symbolSize: 6,
+        data: visibleTrends.map((t) => t.risk),
+        lineStyle: { color: '#dc2626', width: 2 }, itemStyle: { color: '#dc2626' },
+        areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(220,38,38,.18)' }, { offset: 1, color: 'rgba(220,38,38,0)' }] } },
+        label: { show: true, position: 'top', color: '#b91c1c', fontSize: 10, fontWeight: 800 },
+        labelLayout: { hideOverlap: true },
+      },
+      {
+        name: '发现问题', type: 'line', yAxisIndex: 1, smooth: true, symbol: 'circle', symbolSize: 5,
+        data: visibleTrends.map((t) => t.findings),
+        lineStyle: { color: '#d97706', width: 1.6 }, itemStyle: { color: '#d97706' },
+        label: { show: dense, position: 'right', color: '#b45309', fontSize: 10 },
+      },
+      {
+        name: '已整改', type: 'line', yAxisIndex: 1, smooth: true, symbol: 'circle', symbolSize: 5,
+        data: visibleTrends.map((t) => t.rectified),
+        lineStyle: { color: '#16a34a', width: 1.6 }, itemStyle: { color: '#16a34a' },
+        label: { show: dense, position: 'right', color: '#15803d', fontSize: 10 },
+      },
+    ],
   }
-  return <ReactECharts option={opt} style={{ width: '100%', height: '100%', minHeight: 0 }} />
+  return <EChart option={opt} />
 }
 

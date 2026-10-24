@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Bell, ChevronDown, ChevronLeft, ChevronRight, Landmark, UserRound } from 'lucide-react'
 
 import { defaultRoute, getRouteMeta, icmRoutes } from './routeMeta'
+import { useIcmPageKitStyle } from './components/IcmPageKit'
 import './AppShell.css'
 
 const controlPaths = ['/plan-workbench', '/task-center', '/dispatch-center', '/data-collect', '/review-workbench', '/walkthrough-workbench', '/workpaper', '/evidence', '/issues', '/rectify']
@@ -17,6 +18,8 @@ const topNav = [
 ]
 
 export default function AppShell() {
+  // 页面基础样式（卡片、指标、工具条等）在壳层统一注入，避免不使用 PageFrame 的页面（如监督看板）缺失样式
+  useIcmPageKitStyle()
   const location = useLocation()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
