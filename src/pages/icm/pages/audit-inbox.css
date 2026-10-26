@@ -1,0 +1,29 @@
+.audit-inbox .icm-page-header { margin-bottom: 12px; }
+.audit-inbox .icm-page-title { font-size: 18px; line-height: 1.4; }
+.audit-inbox .icm-page-sub { margin-top: 4px; font-size: 12px; }
+.audit-inbox .audit-inbox-metrics { gap: 10px; margin-bottom: 12px; }
+.audit-inbox-metrics .icm-kpi { min-height: 0; padding: 10px 14px; }
+.audit-inbox-metrics .icm-kpi strong { font-size: 22px; line-height: 1.2; }
+.audit-inbox-metrics .icm-kpi span { margin-top: 4px; font-size: 12px; }
+.audit-inbox-metrics .icm-kpi b { margin-top: 3px; font-size: 12px; font-weight: 400; }
+
+/* All review columns grow with their content; the application main owns scrolling. */
+.audit-inbox .icm-audit-review-workbench { height: auto; max-height: none; overflow: visible; }
+.audit-inbox .icm-audit-directory-list,
+.audit-inbox .icm-audit-outline,
+.audit-inbox .icm-audit-paper,
+.audit-inbox .icm-audit-review-panel,
+.audit-inbox .project-document { height: auto; max-height: none; overflow: visible; }
+.audit-inbox .icm-audit-document-body { min-height: 0; }
+.audit-inbox .icm-audit-paper { padding: 18px; overflow-wrap: anywhere; }
+.audit-inbox .icm-audit-document-head { padding: 12px 16px; }
+.audit-inbox .icm-audit-document-head h2 { font-size: 16px; }
+.audit-inbox .icm-audit-paper h3 { font-size: 16px; }
+.audit-inbox .project-document { white-space: pre-wrap; overflow-wrap: anywhere; }
+.audit-inbox .icm-audit-opinion-input { overflow: hidden; field-sizing: content; min-height: 108px; height: auto; }
+@media (max-width: 900px) {
+  .audit-inbox .audit-inbox-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .audit-inbox .audit-inbox-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

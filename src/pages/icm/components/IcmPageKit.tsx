@@ -1,5 +1,7 @@
 ﻿import { useEffect, type CSSProperties, type ReactNode } from 'react'
 import { Button } from '@/components'
+import { useContext } from 'react'
+import { EmbeddedProject } from './EmbeddedProject'
 
 export type Tone = 'blue' | 'cyan' | 'green' | 'amber' | 'red' | 'gray'
 
@@ -108,19 +110,23 @@ export function PageFrame({
   title,
   subtitle,
   actions,
+  titleAccessory,
   children,
 }: {
   title: ReactNode
   subtitle: string
   actions?: ReactNode
+  titleAccessory?: ReactNode
   children: ReactNode
 }) {
   useIcmPageKitStyle()
+  const embedded = useContext(EmbeddedProject)
+  if (embedded) return <section className="project-embedded"><div className="project-embedded-heading"><strong>{title}</strong>{actions}</div>{children}</section>
   return (
     <div className="icm-page">
       <header className="icm-page-header">
         <div>
-          <h1 className="icm-page-title">{title}</h1>
+          {titleAccessory ? <div className="icm-page-title-row"><h1 className="icm-page-title">{title}</h1>{titleAccessory}</div> : <h1 className="icm-page-title">{title}</h1>}
           <p className="icm-page-sub">{subtitle}</p>
         </div>
         {actions ? <div className="icm-actions">{actions}</div> : null}

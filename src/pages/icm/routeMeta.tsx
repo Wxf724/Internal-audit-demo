@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, BookOpen, CalendarClock, ClipboardCheck, Database, FileBarChart2, FileSearch, FileText, Footprints, Home, Radar, RefreshCw, Send, UserCheck } from 'lucide-react'
+import { Activity, AlertTriangle, BookOpen, CalendarClock, ClipboardCheck, Database, FileBarChart2, FileSearch, FileText, Footprints, FolderKanban, Home, Radar, RefreshCw, Send, UserCheck } from 'lucide-react'
 
 import type { IcmRouteMeta, ModuleCategory } from './types'
 
@@ -12,6 +12,11 @@ export const categoryNames: Record<ModuleCategory, string> = {
 
 export const icmRoutes: IcmRouteMeta[] = [
   {
+    path: '/audit-resources', title: '审计资源', pageId: 'audit_resources', category: 'data', categoryName: '审计资源',
+    description: '制度、程序、规则、经验和对象人员的版本管理与项目选用。', icon: BookOpen,
+    layout: '资源分类 → 草稿审核 → 版本发布 → 项目引用',
+  },
+  {
     path: '/workplace',
     title: '首页',
     pageId: 'stage_workplace',
@@ -22,14 +27,24 @@ export const icmRoutes: IcmRouteMeta[] = [
     layout: '待办事项 → 执行概览 → 快捷入口',
   },
   {
+    path: '/projects',
+    title: '审计项目',
+    pageId: 'audit_projects',
+    category: 'plan',
+    categoryName: '审计项目',
+    description: '按项目进入审计准备、实施、报告、整改与档案。',
+    icon: FolderKanban,
+    layout: '项目台账 → 项目工作台 → 全流程办理',
+  },
+  {
     path: '/plan-workbench',
-    title: '工作计划',
+    title: '年度审计计划',
     pageId: 'stage_plan_dispatch',
     category: 'plan',
     categoryName: categoryNames.plan,
-    description: '年度评价、专项检查、计划审批、计划分解和任务派发。',
+    description: '年度审计项目安排、整份计划审批与批准后调整。',
     icon: ClipboardCheck,
-    layout: '计划列表 → 计划审批 → 计划分解 → 任务派发',
+    layout: '年度计划 → 项目清单 → 复核批准 → 项目执行',
   },
   {
     path: '/task-center',
@@ -123,7 +138,7 @@ export const icmRoutes: IcmRouteMeta[] = [
   },
   {
     path: '/rectify',
-    title: '整改追踪',
+    title: '整改台账',
     pageId: 'stage_rectify',
     category: 'rectify',
     categoryName: categoryNames.rectify,
@@ -133,7 +148,7 @@ export const icmRoutes: IcmRouteMeta[] = [
   },
   {
     path: '/audit-center',
-    title: '审核中心',
+    title: '审核待办',
     pageId: 'stage_audit_center',
     category: 'rectify',
     categoryName: categoryNames.rectify,
@@ -143,7 +158,7 @@ export const icmRoutes: IcmRouteMeta[] = [
   },
   {
     path: '/report',
-    title: '报告中心',
+    title: '整改报告',
     pageId: 'stage_report_center',
     category: 'rectify',
     categoryName: categoryNames.rectify,
@@ -176,7 +191,7 @@ export const icmRoutes: IcmRouteMeta[] = [
 export const defaultRoute = '/workplace'
 
 export function getRouteMeta(pathname: string) {
-  return icmRoutes.find((route) => route.path === pathname) || icmRoutes[0]
+  return icmRoutes.find((route) => route.path === pathname) || (pathname.startsWith('/projects/') ? icmRoutes.find((route) => route.path === '/projects')! : icmRoutes[0])
 }
 
 export const demoPath = icmRoutes.map((route) => route.path)

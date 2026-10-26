@@ -4,6 +4,9 @@ import { BookOpenCheck, CheckCircle2, FileText, RotateCcw, Search } from 'lucide
 
 import { Button, DetailLine, Kpi, PageFrame, Segmented, Tag, Toolbar, type Tone } from '../components/IcmPageKit'
 import { useWorkflowStore, type AuditStatus, type WorkflowAudit, type AuditType } from '../store/workflowStore'
+import AnnualPlanApprovals from './annual-plan/AnnualPlanApprovals'
+import { ProjectReviewDecision } from './ProjectReviewActions'
+import './audit-inbox.css'
 
 type AuditTab = 'pending' | 'mine' | 'done'
 const tone = (status: AuditStatus): Tone => status === '已通过' ? 'green' : status === '已退回' ? 'red' : 'amber'
@@ -38,6 +41,9 @@ const auditTypeOptions: { label: string; value: AuditType | '全部' }[] = [
   { label: '整改方案', value: '整改方案审批' },
   { label: '整改复核', value: '整改复核' },
   { label: '报告审核', value: '报告审核' },
+  { label: '项目方案', value: '项目方案审核' },
+  { label: '底稿复核', value: '底稿复核' },
+  { label: '项目归档', value: '项目归档审核' },
 ]
 
 export default function AuditCenter() {
@@ -117,6 +123,7 @@ export default function AuditCenter() {
 
   const renderDocumentBody = () => {
     if (!selected) return null
+    if (selected.projectObject) return <ProjectReviewDecision key={selected.id + selected.status} audit={selected} preview />
     if (selected.type === '计划校审' && linkedPlan) {
       return (
         <>
@@ -174,14 +181,15 @@ export default function AuditCenter() {
   }
 
   return (
-    <PageFrame title="审核中心" subtitle="按业务对象办理计划校审、问题确认、分级审核、异议审核、整改方案审批、整改复核和报告审核，处理结论自动回写原业务记录。">
-      <div className="icm-grid cols-5" style={{ marginBottom: 12 }}>
+    <div className="audit-inbox"><PageFrame title="审核待办" subtitle="集中办理计划、项目、问题、整改及报告审核。">
+      <div className="icm-grid cols-5 audit-inbox-metrics">
         <Kpi value={audits.filter((item) => item.status === '待处理').length.toString()} label="待处理" note="当前用户需办理" tone="amber" />
         <Kpi value={audits.filter((item) => item.type === '计划校审' && item.status === '待处理').length.toString()} label="计划校审" note="待审批计划" tone="red" />
         <Kpi value={audits.filter((item) => (item.type === '问题确认' || item.type === '分级审核' || item.type === '异议审核') && item.status === '待处理').length.toString()} label="问题审核" note="确认/定级/异议" tone="blue" />
         <Kpi value={audits.filter((item) => (item.type === '整改方案审批' || item.type === '整改复核') && item.status === '待处理').length.toString()} label="整改审核" note="方案/复核" tone="cyan" />
         <Kpi value={audits.filter((item) => item.type === '报告审核' && item.status === '待处理').length.toString()} label="报告审核" note="待审核结论" tone="green" />
       </div>
+      <AnnualPlanApprovals />
       <Toolbar>
         <Segmented value={tab} onChange={(value) => setTab(value as AuditTab)} options={[{ label: '待处理', value: 'pending' }, { label: '我发起的', value: 'mine' }, { label: '已处理', value: 'done' }]} />
         <select className="icm-select" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as AuditType | '全部')}>
@@ -217,7 +225,7 @@ export default function AuditCenter() {
 
         <aside className="icm-audit-review-panel">
           <div className="icm-audit-pane-title"><CheckCircle2 size={16} /><strong>审核意见</strong><span>{selected ? '核对要点后填写处理意见' : '请选择审核事项'}</span></div>
-          {selected ? <>
+          {selected && !selected.projectObject ? <>
             <div className="icm-audit-checks">{checks.map((item) => <label key={item}><input checked={checkedItems.includes(item)} onChange={() => setCheckedItems((value) => value.includes(item) ? value.filter((entry) => entry !== item) : [...value, item])} type="checkbox" /><span>{item}</span></label>)}</div>
             <div className="icm-audit-status">
               <DetailLine label="业务编号" value={selected.businessId} />
@@ -232,6 +240,6 @@ export default function AuditCenter() {
           </> : null}
         </aside>
       </div>
-    </PageFrame>
+    </PageFrame></div>
   )
 }

@@ -64,8 +64,10 @@ export type Plan = {
 }
 
 export type Task = {
+  programIds?: string[]
   id: string
   planId?: string
+  projectId?: string
   decompositionId?: string
   decompositionDimension?: string
   notificationNo?: string

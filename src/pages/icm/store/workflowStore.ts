@@ -1,4 +1,8 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import { decideProjectReview } from '../pages/projectReviewService'
+import type { Communication, WorkFile } from '../data/projectWork'
+import { appendMissingDemoRecords, demoHistoryIssues, demoHistoryRectifications } from '../data/auditDemoHistory'
 
 export type IssueLevel = '重大' | '重要' | '一般'
 export type IssueStatus =
@@ -22,6 +26,9 @@ export type AuditType =
   | '整改方案审批'
   | '整改复核'
   | '报告审核'
+  | '项目方案审核'
+  | '底稿复核'
+  | '项目归档审核'
   | '计划校审'
 
 export type AuditStatus = '待处理' | '已通过' | '已退回'
@@ -31,7 +38,9 @@ export type ReportStatus = '草稿' | '待审核' | '审核中' | '审核不通�
 export type PlanStatus = '草稿' | '待校审' | '已立项' | '已派发'
 
 export interface WorkflowIssue {
+  communications?: Communication[]
   id: string
+  projectId?: string
   title: string
   level: IssueLevel
   status: IssueStatus
@@ -74,6 +83,10 @@ export interface ProofItem {
 }
 
 export interface WorkflowRectification {
+  measures?: { id: string; content: string; owner: string; deadline: string; acceptance: string }[]
+  handlingLog?: { at: string; by: string; text: string }[]
+  agentChecks?: { at: string; kind: string; results: string[] }[]
+  proofFiles?: WorkFile[]
   id: string
   issueId: string
   title: string
@@ -127,6 +140,9 @@ export interface WorkflowPlan {
 }
 
 export interface WorkflowAudit {
+  projectId?: string
+  projectObject?: 'preparation' | 'paper' | 'report' | 'archive'
+  sourceVersion?: number
   id: string
   type: AuditType
   title: string
@@ -140,6 +156,15 @@ export interface WorkflowAudit {
 }
 
 export interface WorkflowReport {
+  example?: boolean
+  supportingMaterials?: import('../pages/rectificationReportTypes').RectReportMaterial[]
+  conversation?: import('../pages/rectificationReportTypes').RectReportMessage[]
+  adoptedCitationIds?: string[]
+  rectificationIds?: string[]
+  reportKind?: '整改进展报告' | '整改复核报告'
+  cutoff?: string
+  content?: string
+  snapshot?: { id: string; title: string; owner: string; status: string; progress: number; deadline: string; conclusion: string }[]
   id: string
   title: string
   rectificationId: string
@@ -251,7 +276,7 @@ interface WorkflowState {
 
   // Issues
   saveIssueDraft: (id: string, patch: Pick<WorkflowIssue, 'fact' | 'basis' | 'rootCause' | 'impact' | 'suggestion'>) => void
-  createIssueDraft: (input: Pick<WorkflowIssue, 'title' | 'level' | 'owner' | 'workpaperId' | 'evidenceIds' | 'basis'>) => string
+  createIssueDraft: (input: Pick<WorkflowIssue, 'title' | 'level' | 'owner' | 'workpaperId' | 'evidenceIds' | 'basis'> & Partial<Pick<WorkflowIssue, 'projectId'>>) => string
   confirmIssue: (id: string, patch?: Pick<WorkflowIssue, 'fact' | 'basis' | 'rootCause' | 'impact' | 'suggestion'>) => string | undefined
   submitIssueGradingAudit: (id: string) => void
   returnIssueGrading: (id: string, opinion: string) => void
@@ -264,8 +289,8 @@ interface WorkflowState {
   submitRectificationPlan: (id: string, planContent: string) => void
   approveRectificationPlan: (id: string, opinion: string) => void
   returnRectificationPlan: (id: string, opinion: string) => void
-  addRectificationProof: (id: string) => void
-  toggleEvidenceChecklist: (rectificationId: string, itemId: string) => void
+  addRectificationProof: (id: string, file: WorkFile) => void
+  toggleEvidenceChecklist: (rectificationId: string, itemId: string, fileId?: string) => void
   submitRectificationReview: (id: string) => void
   closeOutRectification: (id: string, opinion: string) => void
   reopenRectification: (id: string) => void
@@ -278,8 +303,8 @@ interface WorkflowState {
   archiveReport: (id: string) => void
 
   // Audits
-  approveAudit: (id: string, opinion: string) => void
-  returnAudit: (id: string, opinion: string) => void
+  approveAudit: (id: string, opinion: string, actor?: string) => void
+  returnAudit: (id: string, opinion: string, actor?: string) => void
 
   // Plans
   createPlan: (input: Partial<WorkflowPlan>) => string
@@ -289,16 +314,16 @@ interface WorkflowState {
   rejectPlanNode: (id: string, node: string, opinion: string) => void
 }
 
-export const useWorkflowStore = create<WorkflowState>((set, get) => ({
-  issues: initialIssues,
-  rectifications: initialRectifications,
+export const useWorkflowStore = create<WorkflowState>()(persist((set, get) => ({
+  issues: [...initialIssues, ...demoHistoryIssues],
+  rectifications: [...initialRectifications, ...demoHistoryRectifications],
   audits: initialAudits,
   reports: initialReports,
   plans: initialPlans,
 
   // Issues
   saveIssueDraft: (id, patch) => set((state) => ({
-    issues: state.issues.map((item) => item.id === id ? { ...item, ...patch, updatedAt: stamp } : item),
+    issues: state.issues.map((item) => item.id === id ? { ...item, ...patch, updatedAt: new Date().toISOString() } : item),
   })),
 
   createIssueDraft: (input) => {
@@ -317,7 +342,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         objection: { status: '无', reason: '', raisedBy: '', raisedAt: '' },
         mergeCandidates: [],
         sourceFindingIds: [],
-        updatedAt: stamp,
+        updatedAt: new Date().toISOString(),
       }],
     }))
     return id
@@ -325,35 +350,15 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
 
   confirmIssue: (id) => {
     const issue = get().issues.find((item) => item.id === id)
-    if (!issue || !issue.fact.trim() || !issue.basis.trim() || !issue.rootCause.trim()) return
-    const rectificationId = issue.rectificationId ?? `RCT-2026-${id.slice(-3)}`
-    set((state) => ({
-      issues: state.issues.map((item) => item.id === id ? { ...item, status: '待分级审核', updatedAt: stamp } : item),
-      rectifications: state.rectifications.some((item) => item.id === rectificationId)
-        ? state.rectifications
-        : [...state.rectifications, {
-            id: rectificationId,
-            issueId: id,
-            title: `${issue.title}整改`,
-            owner: issue.owner,
-            status: '待方案审批',
-            planStatus: '待提交',
-            progress: 0,
-            proofCount: 0,
-            verifyConclusion: '待责任单位提交整改方案',
-            updatedAt: stamp,
-            deadline: issue.deadline && issue.deadline !== '待确认' ? issue.deadline : '2026-08-31',
-            evidenceChecklist: defaultEvidenceChecklist(),
-            followUpCount: 0,
-            overdueWarned: false,
-          }],
-    }))
-    return rectificationId
+    if (!issue || !['待确认', '分级审核不通过'].includes(issue.status) || !issue.fact.trim() || !issue.basis.trim() || !issue.rootCause.trim() || !issue.impact.trim() || !issue.suggestion.trim()) return
+    if (!issue.communications?.length || issue.communications.some((c) => !c.resolvedAt) || !issue.owner.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(issue.deadline)) return
+    set((state) => ({ issues: state.issues.map((item) => item.id === id ? { ...item, status: '待分级审核', updatedAt: new Date().toISOString() } : item) }))
+    return issue.id
   },
 
   submitIssueGradingAudit: (id) => {
     const issue = get().issues.find((item) => item.id === id)
-    if (!issue || get().audits.some((a) => a.businessId === id && a.status === '待处理')) return
+    if (!issue || issue.status !== '待分级审核' || get().audits.some((a) => a.businessId === id && a.status === '待处理')) return
     set((state) => ({
       audits: [...state.audits, {
         id: nextAuditId(state),
@@ -364,22 +369,22 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         applicant: issue.creator || '检查人员',
         status: '待处理',
         node: '内控部门定级复核',
-        submittedAt: stamp,
+        submittedAt: new Date().toISOString(),
       }],
-      issues: state.issues.map((item) => item.id === id ? { ...item, status: '待分级审核', updatedAt: stamp } : item),
+      issues: state.issues.map((item) => item.id === id ? { ...item, status: '待分级审核', updatedAt: new Date().toISOString() } : item),
     }))
   },
 
   returnIssueGrading: (id, opinion) => set((state) => ({
-    issues: state.issues.map((item) => item.id === id ? { ...item, status: '分级审核不通过', gradingOpinion: opinion, updatedAt: stamp } : item),
+    issues: state.issues.map((item) => item.id === id ? { ...item, status: '分级审核不通过', gradingOpinion: opinion, updatedAt: new Date().toISOString() } : item),
   })),
 
   raiseIssueObjection: (id, reason, raisedBy) => set((state) => ({
     issues: state.issues.map((item) => item.id === id ? {
       ...item,
       status: '异议中',
-      objection: { status: '异议中', reason, raisedBy, raisedAt: stamp },
-      updatedAt: stamp,
+      objection: { status: '异议中', reason, raisedBy, raisedAt: new Date().toISOString() },
+      updatedAt: new Date().toISOString(),
     } : item),
   })),
 
@@ -393,7 +398,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
           ...item.objection,
           status: result === '成立' ? '异议成立' : '异议不成立',
           auditorOpinion: opinion,
-          resolvedAt: stamp,
+          resolvedAt: new Date().toISOString(),
         }
         let newStatus: IssueStatus = item.status
         if (result === '成立') {
@@ -401,7 +406,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         } else {
           newStatus = item.rectificationId ? '整改中' : '待分级审核'
         }
-        return { ...item, status: newStatus, objection, updatedAt: stamp }
+        return { ...item, status: newStatus, objection, updatedAt: new Date().toISOString() }
       }),
     }))
   },
@@ -426,11 +431,11 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
           return {
             ...item,
             evidenceIds: mergedEvidenceIds,
-            updatedAt: stamp,
+            updatedAt: new Date().toISOString(),
           }
         }
         if (sourceIds.includes(item.id)) {
-          return { ...item, status: '已关闭', mergedIntoId: targetId, updatedAt: stamp }
+          return { ...item, status: '已关闭', mergedIntoId: targetId, updatedAt: new Date().toISOString() }
         }
         return item
       }),
@@ -442,7 +447,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     const rectification = get().rectifications.find((item) => item.id === id)
     if (!rectification) return
     set((state) => ({
-      rectifications: state.rectifications.map((item) => item.id === id ? { ...item, planStatus: '待审批', planContent, updatedAt: stamp } : item),
+      rectifications: state.rectifications.map((item) => item.id === id ? { ...item, planStatus: '待审批', planContent, updatedAt: new Date().toISOString() } : item),
       audits: [...state.audits, {
         id: nextAuditId(state),
         type: '整改方案审批',
@@ -452,51 +457,58 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         applicant: rectification.owner,
         status: '待处理',
         node: '内控部门方案审核',
-        submittedAt: stamp,
+        submittedAt: new Date().toISOString(),
       }],
     }))
   },
 
   approveRectificationPlan: (id, opinion) => set((state) => ({
+    audits: state.audits.map((a) => a.businessId === id && a.type === '整改方案审批' && a.status === '待处理' ? { ...a, status: '已通过', opinion } : a),
     rectifications: state.rectifications.map((item) => item.id === id ? {
       ...item,
       planStatus: '审批通过',
       status: '整改中',
       verifyConclusion: opinion || '整改方案已通过，进入整改执行',
-      updatedAt: stamp,
+      updatedAt: new Date().toISOString(),
     } : item),
   })),
 
   returnRectificationPlan: (id, opinion) => set((state) => ({
+    audits: state.audits.map((a) => a.businessId === id && a.type === '整改方案审批' && a.status === '待处理' ? { ...a, status: '已退回', opinion } : a),
     rectifications: state.rectifications.map((item) => item.id === id ? {
       ...item,
       planStatus: '审批不通过',
       status: '待方案审批',
       verifyConclusion: opinion || '整改方案未通过，请修改后重新提交',
-      updatedAt: stamp,
+      updatedAt: new Date().toISOString(),
     } : item),
   })),
 
-  addRectificationProof: (id) => set((state) => ({
+  addRectificationProof: (id, file) => set((state) => ({
     rectifications: state.rectifications.map((item) => item.id === id ? {
       ...item,
-      proofCount: item.proofCount + 1,
-      progress: Math.min(95, item.progress + 15),
-      updatedAt: stamp,
+      proofCount: (item.proofFiles?.length ?? 0) + 1,
+      proofFiles: [...(item.proofFiles ?? []), file],
+      updatedAt: new Date().toISOString(),
     } : item),
   })),
 
-  toggleEvidenceChecklist: (rectificationId, itemId) => set((state) => ({
+  toggleEvidenceChecklist: (rectificationId, itemId, fileId) => set((state) => ({
     rectifications: state.rectifications.map((item) => item.id === rectificationId ? {
       ...item,
-      evidenceChecklist: item.evidenceChecklist.map((check) => check.id === itemId ? { ...check, submitted: !check.submitted, uploadedAt: check.submitted ? undefined : stamp } : check),
-      updatedAt: stamp,
+      evidenceChecklist: item.evidenceChecklist.map((check) => {
+        if (check.id !== itemId) return check
+        const chosen = fileId === undefined ? (check.submitted ? undefined : item.proofFiles?.at(-1)) : item.proofFiles?.find((f) => f.id === fileId)
+        return { ...check, submitted: Boolean(chosen), evidenceId: chosen?.id, uploadedAt: chosen ? new Date().toISOString() : undefined }
+      }),
+      updatedAt: new Date().toISOString(),
     } : item),
   })),
 
   submitRectificationReview: (id) => {
     const rectification = get().rectifications.find((item) => item.id === id)
-    if (!rectification || get().audits.some((a) => a.businessId === id && a.status === '待处理')) return
+    if (!rectification || rectification.status !== '整改中' || !rectification.proofFiles?.length || !rectification.evidenceChecklist.filter((e) => e.required).every((e) => e.submitted && e.evidenceId && rectification.proofFiles?.some((f) => f.id===e.evidenceId))) throw new Error('请先完成整改方案审批、上传佐证并关联必需的验收材料。')
+    if (get().audits.some((a) => a.businessId === id && a.status === '待处理')) throw new Error('整改复核已提交，请勿重复提交。')
     set((state) => ({
       audits: [...state.audits, {
         id: nextAuditId(state),
@@ -507,32 +519,32 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         applicant: rectification.owner,
         status: '待处理',
         node: '内控部门复核',
-        submittedAt: stamp,
+        submittedAt: new Date().toISOString(),
       }],
     }))
   },
 
   closeOutRectification: (id, opinion) => {
     const rectification = get().rectifications.find((item) => item.id === id)
-    if (!rectification) return
+    if (!rectification || rectification.status !== '已整改' || !opinion.trim()) return
     set((state) => ({
       rectifications: state.rectifications.map((item) => item.id === id ? {
         ...item,
         status: '已销号',
-        closeOutAt: stamp,
+        closeOutAt: new Date().toISOString(),
         verifyConclusion: opinion || '复核通过，已销号',
-        updatedAt: stamp,
+        updatedAt: new Date().toISOString(),
       } : item),
-      issues: state.issues.map((item) => item.id === rectification.issueId ? { ...item, status: '已关闭', updatedAt: stamp } : item),
+      issues: state.issues.map((item) => item.id === rectification.issueId ? { ...item, status: '已关闭', updatedAt: new Date().toISOString() } : item),
     }))
   },
 
   reopenRectification: (id) => set((state) => ({
-    rectifications: state.rectifications.map((item) => item.id === id ? { ...item, status: '整改中', closeOutAt: undefined, updatedAt: stamp } : item),
+    rectifications: state.rectifications.map((item) => item.id === id ? { ...item, status: '整改中', closeOutAt: undefined, updatedAt: new Date().toISOString() } : item),
   })),
 
   scheduleFollowUp: (id, followUpAt) => set((state) => ({
-    rectifications: state.rectifications.map((item) => item.id === id ? { ...item, followUpAt, followUpCount: item.followUpCount + 1, updatedAt: stamp } : item),
+    rectifications: state.rectifications.map((item) => item.id === id ? { ...item, followUpAt, followUpCount: item.followUpCount + 1, updatedAt: new Date().toISOString() } : item),
   })),
 
   // Reports
@@ -550,21 +562,21 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         owner: rectification?.owner ?? '待确认',
         status: '草稿',
         referenceIds: [issue?.id, issue?.workpaperId, ...(issue?.evidenceIds ?? []), id].filter(Boolean) as string[],
-        updatedAt: stamp,
+        updatedAt: new Date().toISOString(),
       }],
     }))
     return reportId
   },
 
   generateReportLedger: (id) => set((state) => ({
-    reports: state.reports.map((item) => item.id === id && (item.status === '草稿' || item.status === '审核不通过') ? { ...item, status: '待审核', updatedAt: stamp } : item),
+    reports: state.reports.map((item) => item.id === id && (item.status === '草稿' || item.status === '审核不通过') ? { ...item, status: '待审核', updatedAt: new Date().toISOString() } : item),
   })),
 
   submitReportAudit: (id) => {
     const report = get().reports.find((item) => item.id === id)
     if (!report || report.status !== '待审核') return
     set((state) => ({
-      reports: state.reports.map((item) => item.id === id ? { ...item, status: '审核中', updatedAt: stamp } : item),
+      reports: state.reports.map((item) => item.id === id ? { ...item, status: '审核中', updatedAt: new Date().toISOString() } : item),
       audits: [...state.audits, {
         id: nextAuditId(state),
         type: '报告审核',
@@ -574,19 +586,24 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         applicant: '系统管理员',
         status: '待处理',
         node: '内控部门审核',
-        submittedAt: stamp,
+        submittedAt: new Date().toISOString(),
       }],
     }))
   },
 
   archiveReport: (id) => set((state) => ({
-    reports: state.reports.map((item) => item.id === id && item.status === '审核通过' ? { ...item, status: '已归档', updatedAt: stamp } : item),
+    reports: state.reports.map((item) => item.id === id && item.status === '审核通过' ? { ...item, status: '已归档', updatedAt: new Date().toISOString() } : item),
   })),
 
   // Audits
-  approveAudit: (id, opinion) => {
+  approveAudit: (id, opinion, actor = '当前审核人') => {
     const audit = get().audits.find((item) => item.id === id)
-    if (!audit) return
+    if (!audit || audit.status !== '待处理') return
+    if (audit.projectObject) {
+      decideProjectReview(audit, true, opinion, actor)
+      set((s) => ({ audits: s.audits.map((a) => a.id !== id ? a : { ...a, status: '已通过', opinion }) }))
+      return
+    }
     set((state) => {
       const base = {
         audits: state.audits.map((item) => item.id === id ? { ...item, status: '已通过' as AuditStatus, opinion } : item),
@@ -594,26 +611,29 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       if (audit.type === '整改复核') {
         return {
           ...base,
-          rectifications: state.rectifications.map((item) => item.id === audit.businessId ? { ...item, status: '已整改', progress: 100, verifyConclusion: opinion || '复核通过', updatedAt: stamp } : item),
-          issues: state.issues.map((item) => state.rectifications.find((r) => r.id === audit.businessId)?.issueId === item.id ? { ...item, status: '已整改', updatedAt: stamp } : item),
+          rectifications: state.rectifications.map((item) => item.id === audit.businessId ? { ...item, status: '已整改', progress: 100, verifyConclusion: opinion || '复核通过', updatedAt: new Date().toISOString() } : item),
+          issues: state.issues.map((item) => state.rectifications.find((r) => r.id === audit.businessId)?.issueId === item.id ? { ...item, status: '已整改', updatedAt: new Date().toISOString() } : item),
         }
       }
       if (audit.type === '报告审核') {
         return {
           ...base,
-          reports: state.reports.map((item) => item.id === audit.businessId ? { ...item, status: '审核通过', auditOpinion: opinion, updatedAt: stamp } : item),
+          reports: state.reports.map((item) => item.id === audit.businessId ? { ...item, status: '审核通过', auditOpinion: opinion, updatedAt: new Date().toISOString() } : item),
         }
       }
       if (audit.type === '问题确认') {
         return {
           ...base,
-          issues: state.issues.map((item) => item.id === audit.businessId ? { ...item, status: '待分级审核', updatedAt: stamp } : item),
+          issues: state.issues.map((item) => item.id === audit.businessId ? { ...item, status: '待分级审核', updatedAt: new Date().toISOString() } : item),
         }
       }
       if (audit.type === '分级审核') {
+        const issue = state.issues.find((i) => i.id === audit.businessId)!
+        const rectificationId = issue.rectificationId ?? `RCT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
         return {
           ...base,
-          issues: state.issues.map((item) => item.id === audit.businessId ? { ...item, status: '整改中', gradedLevel: item.level, gradingAuditor: '当前用户', gradingOpinion: opinion, updatedAt: stamp } : item),
+          rectifications: state.rectifications.some((r) => r.id === rectificationId) ? state.rectifications : [...state.rectifications, { id: rectificationId, issueId: issue.id, title: `${issue.title}整改`, owner: issue.owner, status: '待方案审批', planStatus: '待提交', progress: 0, proofCount: 0, verifyConclusion: '', updatedAt: new Date().toISOString(), deadline: issue.deadline, evidenceChecklist: defaultEvidenceChecklist(), followUpCount: 0, overdueWarned: false }],
+          issues: state.issues.map((item) => item.id === audit.businessId ? { ...item, rectificationId, status: '整改中', gradedLevel: item.level, gradingAuditor: '当前用户', gradingOpinion: opinion, updatedAt: new Date().toISOString() } : item),
         }
       }
       if (audit.type === '异议审核') {
@@ -621,31 +641,36 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
           ...base,
           issues: state.issues.map((item) => item.id === audit.businessId ? {
             ...item,
-            objection: { ...item.objection, status: '异议不成立', auditorOpinion: opinion, resolvedAt: stamp },
+            objection: { ...item.objection, status: '异议不成立', auditorOpinion: opinion, resolvedAt: new Date().toISOString() },
             status: item.rectificationId ? '整改中' : '待分级审核',
-            updatedAt: stamp,
+            updatedAt: new Date().toISOString(),
           } : item),
         }
       }
       if (audit.type === '整改方案审批') {
         return {
           ...base,
-          rectifications: state.rectifications.map((item) => item.id === audit.businessId ? { ...item, planStatus: '审批通过', status: '整改中', verifyConclusion: opinion || '整改方案已通过', updatedAt: stamp } : item),
+          rectifications: state.rectifications.map((item) => item.id === audit.businessId ? { ...item, planStatus: '审批通过', status: '整改中', verifyConclusion: opinion || '整改方案已通过', updatedAt: new Date().toISOString() } : item),
         }
       }
       if (audit.type === '计划校审') {
         return {
           ...base,
-          plans: state.plans.map((item) => item.id === audit.businessId ? { ...item, status: '已立项', blocker: '无阻塞，已立项', next: '进入计划任务拆解分配', updatedAt: stamp } : item),
+          plans: state.plans.map((item) => item.id === audit.businessId ? { ...item, status: '已立项', blocker: '无阻塞，已立项', next: '进入计划任务拆解分配', updatedAt: new Date().toISOString() } : item),
         }
       }
       return base
     })
   },
 
-  returnAudit: (id, opinion) => {
+  returnAudit: (id, opinion, actor = '当前审核人') => {
     const audit = get().audits.find((item) => item.id === id)
-    if (!audit) return
+    if (!audit || audit.status !== '待处理') return
+    if (audit.projectObject) {
+      decideProjectReview(audit, false, opinion, actor)
+      set((s) => ({ audits: s.audits.map((a) => a.id !== id ? a : { ...a, status: '已退回', opinion }) }))
+      return
+    }
     set((state) => {
       const base = {
         audits: state.audits.map((item) => item.id === id ? { ...item, status: '已退回' as AuditStatus, opinion } : item),
@@ -653,26 +678,26 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       if (audit.type === '报告审核') {
         return {
           ...base,
-          reports: state.reports.map((item) => item.id === audit.businessId ? { ...item, status: '审核不通过', auditOpinion: opinion, updatedAt: stamp } : item),
+          reports: state.reports.map((item) => item.id === audit.businessId ? { ...item, status: '审核不通过', auditOpinion: opinion, updatedAt: new Date().toISOString() } : item),
         }
       }
       if (audit.type === '整改复核') {
         return {
           ...base,
-          rectifications: state.rectifications.map((item) => item.id === audit.businessId ? { ...item, status: '整改中', verifyConclusion: opinion || '复核退回，请补充整改', updatedAt: stamp } : item),
-          issues: state.issues.map((item) => state.rectifications.find((r) => r.id === audit.businessId)?.issueId === item.id ? { ...item, status: '整改中', updatedAt: stamp } : item),
+          rectifications: state.rectifications.map((item) => item.id === audit.businessId ? { ...item, status: '整改中', verifyConclusion: opinion || '复核退回，请补充整改', updatedAt: new Date().toISOString() } : item),
+          issues: state.issues.map((item) => state.rectifications.find((r) => r.id === audit.businessId)?.issueId === item.id ? { ...item, status: '整改中', updatedAt: new Date().toISOString() } : item),
         }
       }
       if (audit.type === '问题确认') {
         return {
           ...base,
-          issues: state.issues.map((item) => item.id === audit.businessId ? { ...item, status: '待确认', updatedAt: stamp } : item),
+          issues: state.issues.map((item) => item.id === audit.businessId ? { ...item, status: '待确认', updatedAt: new Date().toISOString() } : item),
         }
       }
       if (audit.type === '分级审核') {
         return {
           ...base,
-          issues: state.issues.map((item) => item.id === audit.businessId ? { ...item, status: '分级审核不通过', gradingOpinion: opinion, updatedAt: stamp } : item),
+          issues: state.issues.map((item) => item.id === audit.businessId ? { ...item, status: '分级审核不通过', gradingOpinion: opinion, updatedAt: new Date().toISOString() } : item),
         }
       }
       if (audit.type === '异议审核') {
@@ -680,22 +705,22 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
           ...base,
           issues: state.issues.map((item) => item.id === audit.businessId ? {
             ...item,
-            objection: { ...item.objection, status: '异议不成立', auditorOpinion: opinion, resolvedAt: stamp },
+            objection: { ...item.objection, status: '异议不成立', auditorOpinion: opinion, resolvedAt: new Date().toISOString() },
             status: item.rectificationId ? '整改中' : '待分级审核',
-            updatedAt: stamp,
+            updatedAt: new Date().toISOString(),
           } : item),
         }
       }
       if (audit.type === '整改方案审批') {
         return {
           ...base,
-          rectifications: state.rectifications.map((item) => item.id === audit.businessId ? { ...item, planStatus: '审批不通过', status: '待方案审批', verifyConclusion: opinion || '方案未通过，请修改', updatedAt: stamp } : item),
+          rectifications: state.rectifications.map((item) => item.id === audit.businessId ? { ...item, planStatus: '审批不通过', status: '待方案审批', verifyConclusion: opinion || '方案未通过，请修改', updatedAt: new Date().toISOString() } : item),
         }
       }
       if (audit.type === '计划校审') {
         return {
           ...base,
-          plans: state.plans.map((item) => item.id === audit.businessId ? { ...item, status: '待校审', blocker: opinion || '校审退回，请修改', updatedAt: stamp } : item),
+          plans: state.plans.map((item) => item.id === audit.businessId ? { ...item, status: '待校审', blocker: opinion || '校审退回，请修改', updatedAt: new Date().toISOString() } : item),
         }
       }
       return base
@@ -709,7 +734,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       const exists = state.plans.some((p) => p.id === id)
       if (exists) {
         return {
-          plans: state.plans.map((item) => item.id === id ? { ...item, ...input, updatedAt: stamp } : item),
+          plans: state.plans.map((item) => item.id === id ? { ...item, ...input, updatedAt: new Date().toISOString() } : item),
         }
       }
       return {
@@ -741,7 +766,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
 },
 
   updatePlan: (id, patch) => set((state) => ({
-    plans: state.plans.map((item) => item.id === id ? { ...item, ...patch, updatedAt: stamp } : item),
+    plans: state.plans.map((item) => item.id === id ? { ...item, ...patch, updatedAt: new Date().toISOString() } : item),
   })),
 
   submitPlanForApproval: (id) => {
@@ -749,7 +774,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     if (!plan) return
     const chain = buildApprovalChain(plan.needParty, plan.needBoard, plan.owner)
     set((state) => ({
-      plans: state.plans.map((item) => item.id === id ? { ...item, status: '待校审', approvals: chain, blocker: '待线上校审', next: '审批链流转中', updatedAt: stamp } : item),
+      plans: state.plans.map((item) => item.id === id ? { ...item, status: '待校审', approvals: chain, blocker: '待线上校审', next: '审批链流转中', updatedAt: new Date().toISOString() } : item),
       audits: [...state.audits, {
         id: nextAuditId(state),
         type: '计划校审',
@@ -759,7 +784,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         applicant: plan.owner,
         status: '待处理',
         node: '内控部门审核',
-        submittedAt: stamp,
+        submittedAt: new Date().toISOString(),
       }],
     }))
   },
@@ -776,7 +801,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         status: allPassed ? '已立项' : item.status,
         blocker: allPassed ? '无阻塞，已立项' : `待${updatedApprovals.find((n) => n.status !== '通过')?.node}`,
         next: allPassed ? '进入计划任务拆解分配' : '审批链流转中',
-        updatedAt: stamp,
+        updatedAt: new Date().toISOString(),
       } : item),
     }
   }),
@@ -788,7 +813,16 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       status: '待校审',
       blocker: opinion || '校审不通过，请修改',
       next: '修改后重新提交校审',
-      updatedAt: stamp,
+      updatedAt: new Date().toISOString(),
     } : item),
   })),
+}), {
+  name: 'internal-audit-workflow-v2', version: 1,
+  merge: (persisted, current) => {
+    const saved = persisted as Partial<WorkflowState> | undefined
+    return { ...current, ...saved,
+      issues: appendMissingDemoRecords(saved?.issues ?? current.issues, demoHistoryIssues),
+      rectifications: appendMissingDemoRecords(saved?.rectifications ?? current.rectifications, demoHistoryRectifications),
+    }
+  },
 }))

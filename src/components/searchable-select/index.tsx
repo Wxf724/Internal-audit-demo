@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { Check, ChevronDown, CircleX, Search } from 'lucide-react'
 import { matchesPinyin } from '@/utils/pinyin'
 import { colors, sizePresets } from '../theme'
 import { useThemeClass } from '../theme-class-context'
@@ -521,9 +522,7 @@ export function SearchableSelect(props: SearchableSelectProps) {
         {showSearch ? (
           <div className={sz.searchSection}>
             <div className="relative">
-              <i
-                className={`ri-search-line pointer-events-none absolute top-1/2 -translate-y-1/2 text-gray-400 ${sz.searchIconLeft} ${sz.icon}`}
-              />
+              <Search aria-hidden="true" size={14} className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-gray-400 ${sz.searchIconLeft}`} />
               <input
                 type="text"
                 value={search}
@@ -597,7 +596,7 @@ export function SearchableSelect(props: SearchableSelectProps) {
                                   : undefined
                               }
                             >
-                              <i className={`ri-check-line leading-none ${sz.checkIcon}`} />
+                              <Check aria-hidden="true" size={12} />
                             </span>
                           )}
                           <span
@@ -632,6 +631,7 @@ export function SearchableSelect(props: SearchableSelectProps) {
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen(!open)}
+        aria-expanded={open}
         className={`box-border flex w-full min-w-0 max-w-full items-center justify-between gap-2 overflow-hidden border text-left font-normal outline-none transition-colors duration-200 ${sz.minH} ${sz.padding} ${sz.rounded} ${sz.font} ${
           disabled
             ? 'cursor-not-allowed border-(--border) bg-gray-50 text-gray-500 opacity-50'
@@ -668,12 +668,10 @@ export function SearchableSelect(props: SearchableSelectProps) {
               }}
               aria-label="清空"
             >
-              <i className={`ri-close-circle-line leading-none ${sz.icon}`} />
+              <CircleX aria-hidden="true" size={14} />
             </span>
           ) : (
-            <i
-              className={`ri-arrow-down-s-line shrink-0 text-gray-400 transition-transform duration-200 ${sz.icon} ${open ? 'rotate-180' : ''}`}
-            />
+            <ChevronDown aria-hidden="true" size={14} className={`shrink-0 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
           )}
         </div>
       </button>

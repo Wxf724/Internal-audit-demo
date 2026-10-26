@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
+import { useProjectScope, useProjectNavigate } from './projectScope'
 import {
   Check,
   ChevronRight,
@@ -69,9 +70,11 @@ function timelineItems(stageIndex: number, entered: boolean) {
 }
 
 export default function DispatchCenter() {
-  const navigate = useNavigate()
+  const navigate = useProjectNavigate()
+  const { project, projectId } = useProjectScope()
   const [searchParams] = useSearchParams()
-  const taskItems = useTaskDispatchStore((state) => state.tasks)
+  const allTasks = useTaskDispatchStore((state) => state.tasks)
+  const taskItems = useMemo(() => projectId ? allTasks.filter((task) => task.projectId === projectId || project?.taskIds.includes(task.id)) : allTasks, [allTasks, project, projectId])
   const stageByTask = useTaskDispatchStore((state) => state.stageByTask)
   const enteredTaskIds = useTaskDispatchStore((state) => state.enteredTaskIds)
   const advanceDispatch = useTaskDispatchStore((state) => state.advanceDispatch)
@@ -87,15 +90,15 @@ export default function DispatchCenter() {
   }, [requestedTaskId, taskItems])
 
   const filteredTasks = useMemo(() => taskItems.filter((item) => !keyword.trim() || `${item.id}${item.name}${item.unit}${item.owner}`.includes(keyword.trim())), [keyword, taskItems])
-  const selectedTask = taskItems.find((item) => item.id === selectedTaskId) ?? taskItems[0]
-  if (!selectedTask) return null
+  const selectedTask = taskItems.find((item) => item.id === selectedTaskId) ?? (!requestedTaskId ? taskItems[0] : undefined)
+  if (!selectedTask) return <PageFrame title="任务派发" subtitle="当前项目暂无可办理任务，或指定任务不属于此项目。"><Button onClick={() => navigate('/task-center')}>返回执行任务</Button></PageFrame>
 
   const currentStage = stageByTask[selectedTask.id] ?? 'confirm'
   const stageIndex = stages.findIndex((item) => item.id === currentStage)
   const entered = enteredTaskIds.includes(selectedTask.id)
   const currentPhase = getPhase(currentStage, entered)
   const currentPhaseIndex = phaseDefinitions.findIndex((item) => item.id === currentPhase)
-  const enteredCount = enteredTaskIds.length
+  const enteredCount = taskItems.filter((task) => enteredTaskIds.includes(task.id)).length
 
   const chooseTask = (taskId: string) => {
     setSelectedTaskId(taskId)

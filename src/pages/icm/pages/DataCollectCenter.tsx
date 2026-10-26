@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, Database, FileUp, Search, ShieldCheck } from 'lucide-react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
+import { useProjectScope, useProjectNavigate } from './projectScope'
 
 import { Button, Card, DataTable, DetailLine, Kpi, PageFrame, Tag, Toolbar, type Tone } from '../components/IcmPageKit'
 import { dataCollect, overview } from '../data'
@@ -23,61 +24,9 @@ const materialChecklist = [
   { stage: '整改跟踪', node: '整改佐证', type: '整改类', required: '是', count: 0, material: '待责任部门提交整改佐证', status: '待补充' },
 ]
 
-type DemandItem = { name: string; owner: string; scale: string; method: string; status: string; due: string }
-type DemandCategory = { key: string; label: string; note: string; items: DemandItem[] }
-
-// 按央国企内控检查资料要求分类归集（演示 Mock 数据）
-const demandCategories: DemandCategory[] = [
-  {
-    key: 'system',
-    label: '制度与授权文件',
-    note: '制度办法、职责分工与授权审批依据',
-    items: [
-      { name: '采购与招投标管理制度', owner: '内控监督部', scale: '6 份制度文件', method: '制度库调取', status: '已采集', due: '2026-06-24' },
-      { name: '授权审批权限表（采购/资金）', owner: '综合管理部', scale: '2 份清单', method: '资料上传', status: '已采集', due: '2026-06-24' },
-      { name: '不相容岗位分离清单', owner: '人力资源部', scale: '1 份台账', method: '手工补录', status: '待补充', due: '2026-07-02' },
-    ],
-  },
-  {
-    key: 'business',
-    label: '业务台账与合同',
-    note: '采购、招标、合同履约业务底册',
-    items: [
-      { name: '采购合同台账', owner: '采购部', scale: '86 行', method: 'Mock 批量导入', status: '已采集', due: '2026-06-26' },
-      { name: '招标文件与评分表', owner: '招采中心', scale: '14 份标段', method: '资料上传', status: '已采集', due: '2026-06-27' },
-      { name: '合同履约与验收记录', owner: '采购部', scale: '38 份', method: '资料上传', status: '待完善', due: '2026-07-03' },
-    ],
-  },
-  {
-    key: 'approval',
-    label: '审批留痕与流水',
-    note: '关键控制节点的审批与执行记录',
-    items: [
-      { name: '付款审批流水', owner: '财务部', scale: '23 行', method: 'Mock 取数', status: '已采集', due: '2026-06-28' },
-      { name: '采购申请与立项审批单', owner: '采购部', scale: '31 份', method: '资料上传', status: '已采集', due: '2026-06-28' },
-      { name: '评标过程与定标审批记录', owner: '招采中心', scale: '2 份缺失', method: '手工补录', status: '待补充', due: '2026-07-02' },
-    ],
-  },
-  {
-    key: 'counterparty',
-    label: '供应商与相对方',
-    note: '供应商准入、评价与关联关系核验资料',
-    items: [
-      { name: '供应商准入审批资料', owner: '供应链管理部', scale: '32 家', method: '手工补录', status: '待补充', due: '2026-07-02' },
-      { name: '供应商评价与考核记录', owner: '供应链管理部', scale: '24 份', method: '资料上传', status: '待完善', due: '2026-07-04' },
-      { name: '供应商工商与关联关系信息', owner: '内控监督部', scale: '32 条', method: 'Mock 取数', status: '已采集', due: '2026-06-30' },
-    ],
-  },
-  {
-    key: 'rectify',
-    label: '整改与佐证',
-    note: '历史缺陷整改与本期佐证材料',
-    items: [
-      { name: '上年度内控缺陷整改台账', owner: '内控监督部', scale: '1 份台账', method: '制度库调取', status: '已采集', due: '2026-06-25' },
-      { name: '本期整改佐证材料', owner: '责任部门', scale: '待提交', method: '资料上传', status: '待补充', due: '2026-07-15' },
-    ],
-  },
-]
+import { ProjectMaterials } from './ProjectMaterials'
+import { useProjectDocumentStore } from '../store/projectDocumentStore'
+import { demandCategories } from '../data/projectDemands'
 
 function toneForStatus(status: string): Tone {
   if (['已采集', '已入库', '可审查', '已齐', '通过'].includes(status)) return 'green'
@@ -87,7 +36,17 @@ function toneForStatus(status: string): Tone {
 }
 
 export default function DataCollectCenter() {
-  const navigate = useNavigate()
+  const { projectId, project } = useProjectScope()
+  const projectDemands = useProjectDocumentStore((s) => s.demands)
+  const [params, setParams] = useSearchParams()
+  const demand = projectDemands.find((d) => d.id === params.get('demand') && (!projectId || d.projectId === projectId))
+  if (project) return <PageFrame title="资料与数据" subtitle={project.name}><ProjectMaterials project={project} /></PageFrame>
+  if (params.has('demand')) return <PageFrame title="资料需求详情" subtitle={demand?.id} actions={<Button onClick={() => setParams((p) => { p.delete('demand'); p.delete('matter'); p.delete('returnTo'); return p })}>返回项目资料清单</Button>}><Card title={demand?.name ?? '未找到当前范围内的资料需求'}>{demand ? <><DetailLine label="所属项目" value={demand.projectId} /><DetailLine label="责任部门" value={demand.owner} /><DetailLine label="采集方式" value={demand.method} /><DetailLine label="数据规模" value={demand.scale} /><DetailLine label="提交期限" value={demand.due} /><DetailLine label="当前状态" value={<Tag tone={toneForStatus(demand.status)}>{demand.status}</Tag>} /></> : <p>请从事项清单或所属项目重新选择。</p>}</Card></PageFrame>
+  return projectId && projectId !== 'AUD-PL-2026-001' ? <PageFrame title="资料与数据" subtitle="当前项目的资料需求、采集文件及质量校验。"><Card title="项目资料"><div className="icm-empty-inline">尚无已关联的资料需求或数据包。</div></Card></PageFrame> : <DataCollectContent />
+}
+
+function DataCollectContent() {
+  const navigate = useProjectNavigate()
   const [searchParams] = useSearchParams()
   const requestedTab = searchParams.get('view')
   const tab = navItems.some((item) => item.key === requestedTab) ? requestedTab as Tab : 'demands'
@@ -116,7 +75,7 @@ export default function DataCollectCenter() {
           {shownCategories.map((cat) => {
             const done = cat.items.filter((item) => item.status === '已采集').length
             return <Card key={cat.key} title={cat.label} note={cat.note} action={<Tag tone={done === cat.items.length ? 'green' : 'amber'}>{done}/{cat.items.length} 已采集</Tag>}>
-              <DataTable columns={['需求事项', '责任部门', '数据规模', '采集方式', '状态', '提交期限']} rows={cat.items.map((item) => [item.name, item.owner, item.scale, item.method, <Tag tone={toneForStatus(item.status)}>{item.status}</Tag>, item.due])} />
+              <DataTable columns={['需求事项', '责任部门', '数据规模', '采集方式', '状态', '提交期限']} rows={cat.items.map((item, index) => [<button className="icm-link" onClick={() => navigate(`/data-collect?view=demands&demand=DEM-${cat.key}-${index + 1}`)}>{item.name}</button>, item.owner, item.scale, item.method, <Tag tone={toneForStatus(item.status)}>{item.status}</Tag>, item.due])} />
             </Card>
           })}
         </div>

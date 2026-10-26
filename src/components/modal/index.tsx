@@ -145,8 +145,8 @@ export function Modal(props: ModalProps) {
           >
             {/* 关闭按钮 */}
             {closable && (
-              <HeroModal.CloseTrigger className="absolute right-4 top-4 z-10 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer">
-                <i className="ri-close-line text-lg leading-none" />
+              <HeroModal.CloseTrigger aria-label="关闭对话框" className="absolute right-4 top-4 z-10 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer">
+                <span aria-hidden="true" className="text-lg leading-none">×</span>
               </HeroModal.CloseTrigger>
             )}
 

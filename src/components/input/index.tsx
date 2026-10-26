@@ -6,6 +6,8 @@ import { sizePresets, type SizePreset } from '../theme'
 export type InputSize = SizePreset
 
 export interface InputProps {
+  'aria-label'?: string
+  'aria-labelledby'?: string
   /** 受控值 */
   value?: string
   /** 非受控默认值 */
@@ -197,6 +199,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(pro
 
   return (
     <TextField
+      aria-label={props['aria-label'] ?? placeholder}
+      aria-labelledby={props['aria-labelledby']}
       value={value}
       defaultValue={defaultValue}
       onChange={handleChange}

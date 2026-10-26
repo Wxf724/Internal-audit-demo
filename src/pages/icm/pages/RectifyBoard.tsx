@@ -1,9 +1,14 @@
-import { useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useProjectRecords, useProjectNavigate } from './projectScope'
+import { saveProjectFile, downloadProjectFile } from './projectFileStorage'
+import { issueProjectId } from './projectScope'
+import { useIcmDemoRole } from '../AppShell'
+import { useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AlertTriangle, ArrowLeft, CalendarClock, CheckCircle2, FileText, MessageSquare, RotateCcw, Search, ShieldCheck, Upload } from 'lucide-react'
 
 import { Button, Card, DataTable, DetailLine, Kpi, PageFrame, Tag, Toolbar, type Tone } from '../components/IcmPageKit'
 import { useWorkflowStore, type RectificationStatus } from '../store/workflowStore'
+import { daysUntil, isOverdueRectification } from './workplaceMetrics'
 
 function tone(status: RectificationStatus | string): Tone {
   if (status === '已销号' || status === '已整改') return 'green'
@@ -12,18 +17,12 @@ function tone(status: RectificationStatus | string): Tone {
   return 'blue'
 }
 
-function daysUntil(deadline: string) {
-  if (!deadline) return null
-  const diff = Math.ceil((new Date(deadline).getTime() - new Date('2026-07-23').getTime()) / (1000 * 60 * 60 * 24))
-  return diff
-}
-
 export default function RectifyBoard() {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const rectifications = useWorkflowStore((state) => state.rectifications)
-  const issues = useWorkflowStore((state) => state.issues)
-  const reports = useWorkflowStore((state) => state.reports)
+  const navigate = useProjectNavigate()
+  const { role } = useIcmDemoRole()
+  const fileInput = useRef<HTMLInputElement>(null)
+  const { rectifications, issues, reports } = useProjectRecords()
+  const [searchParams, setSearchParams] = useSearchParams()
   const createReport = useWorkflowStore((state) => state.createReport)
   const submitRectificationPlan = useWorkflowStore((state) => state.submitRectificationPlan)
   const approveRectificationPlan = useWorkflowStore((state) => state.approveRectificationPlan)
@@ -37,7 +36,7 @@ export default function RectifyBoard() {
   const [selectedId, setSelectedId] = useState(searchParams.get('rect') ?? '')
   const [keyword, setKeyword] = useState('')
   const requestedStatus = searchParams.get('status')
-  const [status, setStatus] = useState(requestedStatus === '已整改' || requestedStatus === '整改中' || requestedStatus === '待方案审批' || requestedStatus === '已销号' ? requestedStatus : '全部状态')
+  const status = requestedStatus === 'overdue' ? '逾期整改' : requestedStatus === '已整改' || requestedStatus === '整改中' || requestedStatus === '待方案审批' || requestedStatus === '已销号' ? requestedStatus : '全部状态'
   const [activeTab, setActiveTab] = useState<'plan' | 'progress' | 'evidence' | 'review' | 'followup'>('plan')
   const [planContent, setPlanContent] = useState('')
   const [reviewOpinion, setReviewOpinion] = useState('')
@@ -50,7 +49,7 @@ export default function RectifyBoard() {
   const visible = useMemo(() => rectifications.filter((item) => {
     const issue = issues.find((record) => record.id === item.issueId)
     const matchesKeyword = !keyword.trim() || `${item.id}${item.title}${item.owner}${issue?.title ?? ''}`.includes(keyword.trim())
-    const matchesStatus = status === '全部状态' || item.status === status
+    const matchesStatus = status === '全部状态' || (status === '逾期整改' ? isOverdueRectification(item) : item.status === status)
     return matchesKeyword && matchesStatus
   }), [rectifications, issues, keyword, status])
 
@@ -59,17 +58,15 @@ export default function RectifyBoard() {
     const ongoing = rectifications.filter((item) => item.status === '整改中').length
     const completed = rectifications.filter((item) => item.status === '已整改').length
     const closed = rectifications.filter((item) => item.status === '已销号').length
-    const overdue = rectifications.filter((item) => {
-      const d = daysUntil(item.deadline)
-      return d !== null && d < 0 && item.status !== '已整改' && item.status !== '已销号'
-    }).length
+    const overdue = rectifications.filter((item) => isOverdueRectification(item)).length
 
     return (
       <PageFrame title="整改追踪" subtitle="问题确认后形成整改事项；整改方案审批、佐证提交、复核销号全流程跟踪。">
         <Toolbar>
           <div className="icm-modal-search" style={{ maxWidth: 340 }}><Search size={15} /><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="搜索整改编号、事项或责任部门" /></div>
-          <select className="icm-select" value={status} onChange={(event) => setStatus(event.target.value)}>
+          <select className="icm-select" aria-label="整改状态" value={status} onChange={(event) => setSearchParams((params) => { params.set('status', event.target.value === '逾期整改' ? 'overdue' : event.target.value); return params })}>
             <option>全部状态</option>
+            <option>逾期整改</option>
             <option>待方案审批</option>
             <option>整改中</option>
             <option>已整改</option>
@@ -98,7 +95,7 @@ export default function RectifyBoard() {
                 item.owner,
                 `${item.progress}%`,
                 <Tag tone={tone(item.status)}>{item.status}</Tag>,
-                <Tag tone={d !== null && d < 0 ? 'red' : 'blue'}>{dayText}</Tag>,
+                <Tag tone={isOverdueRectification(item) ? 'red' : 'blue'}>{item.status === '已整改' || item.status === '已销号' ? '已完成整改' : dayText}</Tag>,
                 <button className="icm-link" type="button" onClick={(event) => { event.stopPropagation(); setSelectedId(item.id) }}>查看</button>,
               ]
             })}
@@ -110,7 +107,7 @@ export default function RectifyBoard() {
   }
 
   const d = daysUntil(selected.deadline)
-  const isOverdue = d !== null && d < 0
+  const isOverdue = isOverdueRectification(selected)
   const canEditPlan = selected.planStatus === '待提交' || selected.planStatus === '审批不通过'
   const canApprovePlan = selected.planStatus === '待审批'
   const canExecute = selected.status === '整改中'
@@ -127,29 +124,38 @@ export default function RectifyBoard() {
   }
 
   const approvePlan = () => {
-    approveRectificationPlan(selected.id, reviewOpinion || '整改方案可行，同意执行')
+    if (!reviewOpinion.trim()) { setNotice('请填写方案审批意见'); return }
+    approveRectificationPlan(selected.id, reviewOpinion)
     setNotice('整改方案已审批通过')
     setReviewOpinion('')
   }
 
   const returnPlan = () => {
-    returnRectificationPlan(selected.id, reviewOpinion || '整改方案需补充完善')
+    if (!reviewOpinion.trim()) { setNotice('请填写退回原因'); return }
+    returnRectificationPlan(selected.id, reviewOpinion)
     setNotice('整改方案已退回')
     setReviewOpinion('')
   }
 
-  const addProof = () => {
-    addRectificationProof(selected.id)
-    setNotice('佐证材料已上传')
+  const addProof = () => fileInput.current?.click()
+  const receiveProof = async (file?: File) => {
+    if (!file) return
+    try {
+      const projectId = selectedIssue && issueProjectId(selectedIssue)
+      if (!projectId) throw new Error('请先明确来源问题所属项目。')
+      const meta = await saveProjectFile(file, projectId, role.name)
+      addRectificationProof(selected.id, meta)
+      setNotice('原始佐证已保存，请关联下方验收清单并提交复核。')
+    } catch (e) { setNotice((e as Error).message) }
   }
 
   const submitReview = () => {
-    submitRectificationReview(selected.id)
-    setNotice('已提交整改复核')
+    try { submitRectificationReview(selected.id); setNotice('已提交整改复核') } catch (e) { setNotice((e as Error).message) }
   }
 
   const closeOut = () => {
-    closeOutRectification(selected.id, reviewOpinion || '复核通过，同意销号')
+    if (!reviewOpinion.trim()) { setNotice('请填写效果验证与销号意见'); return }
+    closeOutRectification(selected.id, reviewOpinion)
     setNotice('整改事项已销号')
     setReviewOpinion('')
   }
@@ -170,6 +176,8 @@ export default function RectifyBoard() {
         {canCreateReport ? <Button type="primary" icon={<FileText size={14} />} onClick={openReport}>{selectedReport ? '查看报告' : '编制报告'}</Button> : null}
       </Toolbar>
 
+      <input ref={fileInput} aria-label="整改佐证文件" hidden type="file" onChange={(e) => { void receiveProof(e.target.files?.[0]); e.target.value = '' }} />
+      {(selected.proofFiles ?? []).map((f) => <div className="icm-list-row" key={f.id}><span>{f.name} · {f.by}</span><button className="icm-link" onClick={() => downloadProjectFile(f).catch((e) => setNotice(e.message))}>下载佐证</button></div>)}
       <div className="icm-rectify-detail-layout">
         <div style={{ display: 'grid', gap: 12 }}>
           <Card title="整改事项信息" note="整改责任、期限和来源问题保持绑定。">
@@ -249,9 +257,9 @@ export default function RectifyBoard() {
                   item.submitted ? <Tag tone="green">已提交</Tag> : <Tag tone="amber">待提交</Tag>,
                   item.uploadedAt || '-',
                   canExecute ? (
-                    <button className="icm-link" type="button" onClick={() => toggleEvidenceChecklist(selected.id, item.id)}>
-                      {item.submitted ? '取消' : '标记提交'}
-                    </button>
+                    <select className="icm-select" aria-label={'关联佐证：' + item.name} value={item.evidenceId ?? ''} onChange={(e) => toggleEvidenceChecklist(selected.id, item.id, e.target.value)}>
+                      <option value="">选择佐证文件</option>{selected.proofFiles?.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                    </select>
                   ) : (
                     '-'
                   ),
@@ -278,7 +286,7 @@ export default function RectifyBoard() {
                 </>
               ) : (
                 <>
-                  <p style={{ color: '#607089', fontSize: 13 }}>整改复核由审核中心统一办理。提交复核后，审核人员将检查整改措施落地情况和佐证材料完整性。</p>
+                  <p style={{ color: '#607089', fontSize: 13 }}>整改复核由审核待办统一办理。提交复核后，审核人员将检查整改措施落地情况和佐证材料完整性。</p>
                   {canExecute && canReview ? <Button type="primary" icon={<ShieldCheck size={14} />} onClick={submitReview}>提交整改复核</Button> : null}
                 </>
               )}

@@ -56,6 +56,8 @@ import { Button } from '@/components/button'
 
 ## 图标
 
+纯图标按钮须设置 `aria-label`，可用 `title` 提供悬停说明；组件支持标准 ARIA 属性（如 `aria-expanded`、`aria-controls`）。
+
 ```tsx
 <Button type="primary" icon={<i className="ri-add-line" />}>
   创建项目

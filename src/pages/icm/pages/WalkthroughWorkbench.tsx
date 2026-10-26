@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useProjectScope, useProjectNavigate } from './projectScope'
 import { ChevronRight, FileCheck2, FilePlus2, FileText, Search, ShieldCheck } from 'lucide-react'
 
 import { Button, Card, DataTable, DetailLine, PageFrame, Tag, Toolbar, type Tone } from '../components/IcmPageKit'
@@ -55,7 +55,12 @@ function resultTone(value: TestResult): Tone {
 }
 
 export default function WalkthroughWorkbench() {
-  const navigate = useNavigate()
+  const { projectId } = useProjectScope()
+  return projectId && projectId !== 'AUD-PL-2026-001' ? <PageFrame title="穿行测试" subtitle="当前项目的测试程序与样本记录。"><Card title="测试任务"><div className="icm-empty-inline">尚无已关联的穿行测试任务。</div></Card></PageFrame> : <WalkthroughContent />
+}
+
+function WalkthroughContent() {
+  const navigate = useProjectNavigate()
   const [taskId, setTaskId] = useState(testTasks[0].id)
   const [sampleId, setSampleId] = useState(testTasks[0].samples[0].id)
   const [nodeIndex, setNodeIndex] = useState(0)

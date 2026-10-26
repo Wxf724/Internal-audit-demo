@@ -25,6 +25,8 @@ export interface TextareaAutoSize {
 }
 
 export interface TextareaProps {
+  'aria-label'?: string
+  'aria-labelledby'?: string
   /** 受控值 */
   value?: string
   /** 非受控默认值 */
@@ -239,6 +241,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     return (
       <TextField
+      aria-label={props['aria-label'] ?? placeholder}
+      aria-labelledby={props['aria-labelledby']}
         value={value}
         defaultValue={defaultValue}
         onChange={handleChange}

@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import ReactECharts from 'echarts-for-react'
-import { AlertTriangle, ClipboardCheck, Clock3, FileCheck2, FileText, Inbox, Megaphone, Newspaper, Send, ShieldAlert, UserCheck } from 'lucide-react'
+import { AlertTriangle, ChevronRight, Clock3, FolderKanban, Megaphone, Newspaper, ShieldAlert } from 'lucide-react'
 
-import { Button, Card, DataTable, PageFrame, Tag, Toolbar, type Tone } from '../components/IcmPageKit'
-import { cockpit, overview, rectifications as legacyRects, tasks } from '../data'
+import { Button, Card, DataTable, Tag, type Tone } from '../components/IcmPageKit'
 import { useWorkflowStore } from '../store/workflowStore'
+import HomeIntelligence from '../components/HomeIntelligence'
+import HomeAnalytics from '../components/HomeAnalytics'
+import { useAuditProjectStore } from '../store/auditProjectStore'
+import { useAnnualPlanStore } from '../store/annualPlanStore'
+import { canSeePageRoute, canSeeTopPage } from '../pageVisibility'
+import { useIcmDemoRole } from '../AppShell'
+import { canViewProject, daysUntil, isActiveProject, isOpenIssue, isOverdueRectification, isUnfinishedRectification, uniqueWorkItems } from './workplaceMetrics'
+import './home-ai.css'
 
 type HomeTab = 'todo' | 'mine' | 'tracking' | 'notice'
 
@@ -31,23 +37,13 @@ const groupNews = [
   ['内控监督部召开整改闭环专题会', '2026-07-05'],
 ]
 
-function lineOption(labels: string[], planned: number[], actual: number[], plannedName = '计划目标', actualName = '实际完成') {
-  return { tooltip: { trigger: 'axis' }, legend: { top: 0, right: 0, textStyle: { color: '#64748b', fontSize: 10 }, itemWidth: 10, itemHeight: 6 }, grid: { left: 28, right: 8, top: 30, bottom: 24, containLabel: true }, xAxis: { type: 'category', data: labels, boundaryGap: false, axisLine: { lineStyle: { color: '#dbe5f1' } }, axisLabel: { color: '#748299', fontSize: 10 } }, yAxis: { type: 'value', splitLine: { lineStyle: { color: '#edf2f8' } }, axisLabel: { color: '#94a3b8', fontSize: 10 } }, series: [{ name: plannedName, type: 'line', smooth: true, data: planned, symbolSize: 5, lineStyle: { color: '#155bd4', width: 2 }, itemStyle: { color: '#155bd4' }, areaStyle: { color: 'rgba(21,91,212,.08)' } }, { name: actualName, type: 'line', smooth: true, data: actual, symbolSize: 5, lineStyle: { color: '#16a34a', width: 2 }, itemStyle: { color: '#16a34a' } }] }
-}
-
-function pieOption(value: number, label: string, color = '#155bd4') {
-  return { title: { text: `${value}%`, subtext: label, left: 'center', top: '37%', textStyle: { color: '#0b1f43', fontSize: 26, fontWeight: 800 }, subtextStyle: { color: '#748299', fontSize: 11 } }, series: [{ type: 'pie', radius: ['62%', '78%'], center: ['50%', '53%'], label: { show: false }, data: [{ value, itemStyle: { color } }, { value: 100 - value, itemStyle: { color: '#e8eef7' } }] }] }
-}
-
-function daysUntil(deadline: string) {
-  if (!deadline || deadline === '待确认') return null
-  const diff = Math.ceil((new Date(deadline).getTime() - new Date('2026-07-23').getTime()) / (1000 * 60 * 60 * 24))
-  return diff
-}
-
 export default function Workplace() {
   const navigate = useNavigate()
+  const { role } = useIcmDemoRole()
+  const projects = useAuditProjectStore((state) => state.projects)
   const [tab, setTab] = useState<HomeTab>('todo')
+  const showPlans = canSeeTopPage(role.id, 'plan')
+  const activeTab = tab === 'mine' && !showPlans ? 'todo' : tab
   const [slide, setSlide] = useState(0)
   const [infoTab, setInfoTab] = useState<'group' | 'notice'>('group')
 
@@ -59,7 +55,7 @@ export default function Workplace() {
   const issues = useWorkflowStore((state) => state.issues)
   const rectifications = useWorkflowStore((state) => state.rectifications)
   const audits = useWorkflowStore((state) => state.audits)
-  const plans = useWorkflowStore((state) => state.plans)
+  const plans = useAnnualPlanStore((state) => state.plans)
   const reports = useWorkflowStore((state) => state.reports)
 
   const todoList = useMemo(() => {
@@ -71,12 +67,12 @@ export default function Workplace() {
         sourceId: a.businessId,
         node: a.node,
         status: '待处理',
-        priority: a.type === '计划校审' || a.type === '报告审核' ? '高' : '中',
+        priority: a.type === '计划校审' || a.type === '报告审核' || issues.some((issue) => issue.id === a.businessId && issue.level === '重大') ? '高' : '中',
         route: a.route,
         dueHint: a.submittedAt.slice(0, 10),
       })
     })
-    issues.filter((i) => i.status === '待确认' || i.status === '分级审核不通过').forEach((i) => {
+    issues.filter((i) => !i.mergedIntoId && (i.status === '待确认' || i.status === '分级审核不通过')).forEach((i) => {
       items.push({
         type: '问题定稿',
         title: i.title,
@@ -112,144 +108,54 @@ export default function Workplace() {
         dueHint: r.updatedAt.slice(0, 10),
       })
     })
-    return items.sort((a, b) => (a.priority === '高' ? -1 : 1) - (b.priority === '高' ? -1 : 1))
-  }, [audits, issues, rectifications, reports])
+    plans.filter((plan) => plan.status !== '已批准').forEach((plan) => {
+      const pendingNode = plan.status === '审批中' ? plan.submissions.at(-1)?.steps.find((node) => node.status === '待处理') : undefined
+      items.push({ type: pendingNode ? '计划审批' : '计划编制', title: plan.content.name, sourceId: plan.id, node: pendingNode ? `${pendingNode.name} · ${pendingNode.actor.name}` : plan.status === '已退回' ? '退回修订' : '编制并提交审批', status: '待处理', priority: plan.status === '已退回' ? '高' : '中', route: `/plan-workbench?annual=${plan.id}&tab=${pendingNode ? 'approval' : 'basic'}`, dueHint: '' })
+    })
+    return uniqueWorkItems(items).filter((item) => canSeePageRoute(role.id, item.route)).sort((a, b) => (a.priority === '高' ? -1 : 1) - (b.priority === '高' ? -1 : 1))
+  }, [audits, issues, rectifications, reports, plans, role.id])
 
-  const myInitiated = plans.filter((p) => p.owner === '当前用户' || p.owner === '张衡').length
-  const myTracking = rectifications.filter((r) => r.status === '整改中' || r.status === '待方案审批').length
-  const overdueIssues = issues.filter((i) => {
-    const d = daysUntil(i.deadline)
-    return d !== null && d < 0 && i.status !== '已整改' && i.status !== '已关闭'
-  }).length
-  const overdueRects = rectifications.filter((r) => {
-    const d = daysUntil(r.deadline)
-    return d !== null && d < 0 && r.status !== '已整改' && r.status !== '已销号'
-  }).length
-
-  const majorIssues = issues.filter((i) => i.level === '重大' && i.status !== '已整改' && i.status !== '已关闭').length
-
-  const warningItems = useMemo(() => {
-    const items: { level: 'red' | 'amber'; text: string; route: string }[] = []
-    if (overdueIssues > 0) items.push({ level: 'red', text: `${overdueIssues} 个问题已逾期，请督促整改`, route: '/issues' })
-    if (overdueRects > 0) items.push({ level: 'red', text: `${overdueRects} 个整改事项已逾期`, route: '/rectify' })
-    if (majorIssues > 0) items.push({ level: 'red', text: `${majorIssues} 个重大问题待闭环`, route: '/issues' })
-    const pendingGrading = issues.filter((i) => i.status === '待分级审核').length
-    if (pendingGrading > 0) items.push({ level: 'amber', text: `${pendingGrading} 个问题待分级审核`, route: '/audit-center' })
-    const pendingPlanApproval = plans.filter((p) => p.status === '待校审').length
-    if (pendingPlanApproval > 0) items.push({ level: 'amber', text: `${pendingPlanApproval} 个计划待校审`, route: '/audit-center' })
-    return items
-  }, [overdueIssues, overdueRects, majorIssues, issues, plans])
-
-  const finishedRects = legacyRects.filter((item) => item.lane === '已整改').length
-  const rectRate = Math.round((finishedRects / Math.max(legacyRects.length, 1)) * 100)
+  const visibleProjects = projects.filter((project) => canViewProject(project, role))
+  const activeProjects = visibleProjects.filter(isActiveProject)
+  const openIssues = issues.filter(isOpenIssue)
+  const overdueRects = rectifications.filter((rect) => isOverdueRectification(rect))
+  const dueSoonRects = rectifications.filter((rect) => {
+    const days = daysUntil(rect.deadline)
+    return isUnfinishedRectification(rect) && days !== null && days >= 0 && days <= 7
+  })
+  const longestOverdue = Math.max(0, ...overdueRects.map((rect) => -(daysUntil(rect.deadline) ?? 0)))
+  const openTodos = () => {
+    setTab('todo')
+    window.requestAnimationFrame(() => {
+      const list = document.getElementById('home-todo-list')
+      list?.scrollIntoView({ block: 'nearest' })
+      list?.focus({ preventScroll: true })
+    })
+  }
 
   const stats = [
-    { label: '待处理', value: todoList.length, note: '需当前用户处理', icon: Clock3, tone: 'amber' as Tone },
-    { label: '我发起的', value: myInitiated, note: '检查计划与专项抽查', icon: Send, tone: 'blue' as Tone },
-    { label: '我跟踪的', value: myTracking, note: '整改中事项', icon: FileCheck2, tone: 'cyan' as Tone },
-    { label: '逾期预警', value: overdueIssues + overdueRects, note: '问题/整改已逾期', icon: AlertTriangle, tone: 'red' as Tone },
+    { label: '待办事项', value: todoList.length, note: `高优先级 ${todoList.filter((item) => item.priority === '高').length} · 计划办理 ${todoList.filter((item) => item.type.startsWith('计划')).length}`, hint: '当前业务数据中的待办，按业务编号合并；包含审核、问题定稿、整改方案、报告修改和计划办理。点击查看待办清单。', icon: Clock3, tone: 'amber' as Tone, onClick: openTodos },
+    { label: '在审项目', value: activeProjects.length, note: `准备 ${activeProjects.filter((p) => p.stage === '准备中').length} · 实施 ${activeProjects.filter((p) => p.stage === '实施中').length} · 报告 ${activeProjects.filter((p) => p.stage === '报告中').length}`, hint: '当前角色可访问的准备中、实施中、报告中项目；不含整改跟踪和已归档项目。点击查看在审项目。', icon: FolderKanban, tone: 'blue' as Tone, onClick: () => navigate('/projects?stage=active') },
+    { label: '待闭环问题', value: openIssues.length, note: `重大 ${openIssues.filter((i) => i.level === '重大').length} · 已整改待关闭 ${openIssues.filter((i) => i.status === '已整改').length}`, hint: '尚未关闭且未被合并的问题；已整改但未关闭仍计入。点击查看待闭环问题。', icon: ShieldAlert, tone: 'cyan' as Tone, onClick: () => navigate('/issues?status=open') },
+    { label: '逾期整改', value: overdueRects.length, note: `最长逾期 ${longestOverdue} 天 · 7天内到期 ${dueSoonRects.length}`, hint: '截至今天，超过整改期限且尚未完成整改的事项，按整改编号统计，不再叠加来源问题。点击查看逾期整改。', icon: AlertTriangle, tone: 'red' as Tone, onClick: () => navigate('/rectify?status=overdue') },
   ]
 
   return (
-    <PageFrame
-      title="工作台"
-      subtitle="个人工作入口，集中处理待办、跟踪整改、查看预警和执行进度。"
-      actions={<><Button type="primary" onClick={() => navigate('/plan-workbench')}>新建检查计划</Button><Button type="primary-soft" onClick={() => navigate('/audit-center')}>进入审核中心</Button></>}
-    >
+    <div className="icm-home-dashboard"><div className="icm-page" aria-label="首页">
       <div className="icm-home-stat-grid">
         {stats.map((item) => {
           const Icon = item.icon
           return (
-            <div className={`icm-home-stat tone-${item.tone}`} key={item.label}>
+            <button type="button" className={`icm-home-stat tone-${item.tone}`} key={item.label} onClick={item.onClick} title={item.hint} aria-label={`${item.label} ${item.value}，${item.note}，查看明细`}>
               <span className="icm-home-stat-icon"><Icon size={24} /></span>
               <div><strong>{item.value}</strong><b>{item.label}</b><em>{item.note}</em></div>
-            </div>
+              <ChevronRight className="icm-home-stat-arrow" size={15} />
+            </button>
           )
         })}
       </div>
 
-      {warningItems.length > 0 ? (
-        <div className="icm-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, marginBottom: 16 }}>
-          {warningItems.map((item, index) => (
-            <div
-              key={index}
-              className="icm-card"
-              style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderLeft: `3px solid ${item.level === 'red' ? '#dc2626' : '#d97706'}` }}
-              onClick={() => navigate(item.route)}
-              role="button"
-              tabIndex={0}
-            >
-              <ShieldAlert size={18} color={item.level === 'red' ? '#dc2626' : '#d97706'} />
-              <span style={{ color: '#0f172a', fontSize: 13, fontWeight: 700 }}>{item.text}</span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="icm-home-main-grid">
-        <Card title="我的待办" note="集中处理待办、跟踪整改与我发起的检查计划">
-          <div className="icm-home-tabs" role="tablist">
-            {([
-              ['todo', `待办事项${todoList.length > 0 ? `（${todoList.length}）` : ''}`],
-              ['mine', '我发起的'],
-              ['tracking', '我跟踪的'],
-            ] as const).map(([key, label]) => (
-              <button className={tab === key ? 'active' : ''} type="button" key={key} onClick={() => setTab(key)}>{label}</button>
-            ))}
-          </div>
-
-          {tab === 'todo' ? (
-            <div className="icm-home-scroll">
-              {todoList.length === 0 ? (
-                <div className="icm-empty-inline">当前无待办事项</div>
-              ) : (
-                <DataTable
-                  columns={['事项类型', '摘要', '业务编号', '当前节点', '优先级', '状态', '操作']}
-                  rows={todoList.map((item) => [
-                    item.type,
-                    item.title,
-                    item.sourceId,
-                    item.node,
-                    <Tag tone={item.priority === '高' ? 'red' : item.priority === '中' ? 'amber' : 'blue'}>{item.priority}</Tag>,
-                    <Tag tone="amber">{item.status}</Tag>,
-                    <button className="icm-link" type="button" onClick={() => navigate(item.route)}>处理</button>,
-                  ])}
-                />
-              )}
-            </div>
-          ) : tab === 'mine' ? (
-            <div className="icm-home-scroll">
-              <DataTable
-                columns={['计划编号', '计划名称', '受检单位', '状态', '操作']}
-                rows={plans.filter((p) => p.owner === '当前用户' || p.owner === '张衡').map((p) => [
-                  p.id,
-                  p.name,
-                  p.unit,
-                  <Tag tone={p.status === '已立项' ? 'green' : p.status === '已派发' ? 'cyan' : 'amber'}>{p.status}</Tag>,
-                  <button className="icm-link" type="button" onClick={() => navigate(`/plan-workbench?plan=${p.id}`)}>查看</button>,
-                ])}
-              />
-            </div>
-          ) : (
-            <div className="icm-home-scroll">
-              <DataTable
-                columns={['整改编号', '整改事项', '责任部门', '进度', '状态', '操作']}
-                rows={rectifications.filter((r) => r.status === '整改中' || r.status === '待方案审批').map((r) => {
-                  const issue = issues.find((i) => i.id === r.issueId)
-                  return [
-                    r.id,
-                    r.title,
-                    issue?.owner ?? r.owner,
-                    `${r.progress}%`,
-                    <Tag tone={r.status === '整改中' ? 'amber' : 'red'}>{r.status}</Tag>,
-                    <button className="icm-link" type="button" onClick={() => navigate(`/rectify?rect=${r.id}`)}>查看</button>,
-                  ]
-                })}
-              />
-            </div>
-          )}
-        </Card>
-
+      <div className="icm-home-workspace">
         <Card title="工作动态" note="集团要闻与通知公告">
           <div className="icm-home-news-layout">
             <div className="icm-home-carousel">
@@ -276,23 +182,65 @@ export default function Workplace() {
             </div>
           </div>
         </Card>
-      </div>
+        <Card title="工作待办" action={<div className="icm-home-todo-actions"><Button size="sm" type="primary" onClick={() => navigate('/projects')}>进入审计项目</Button><Button size="sm" type="primary-soft" onClick={() => navigate('/audit-center')}>处理审核事项</Button></div>}>
+          <div className="icm-home-tabs" role="tablist">
+            {([
+              ['todo', `待办事项${todoList.length > 0 ? `（${todoList.length}）` : ''}`],
+              ['mine', '我负责的计划'],
+              ['tracking', '整改跟踪'],
+            ] as const).filter(([key]) => key !== 'mine' || showPlans).map(([key, label]) => (
+              <button className={activeTab === key ? 'active' : ''} type="button" key={key} onClick={() => setTab(key)}>{label}</button>
+            ))}
+          </div>
 
-      <div className="icm-grid cols-4" style={{ marginTop: 12 }}>
-        <Card title="月度执行情况" note="计划目标与实际完成"><ReactECharts style={{ height: 168 }} option={lineOption(['2月', '3月', '4月', '5月', '6月', '7月'], [18, 24, 31, 38, 46, 54], [15, 21, 26, 31, 39, 44])} /></Card>
-        <Card title="全年执行情况" note="2026年内控检查执行趋势"><ReactECharts style={{ height: 168 }} option={lineOption(overview.trends.map((item) => item.month.slice(5)), overview.trends.map((item) => item.findings), overview.trends.map((item) => item.rectified), '问题发现', '完成整改')} /></Card>
-        <Card title="计划执行完成率" note={`${tasks.length} 个任务包`}><ReactECharts style={{ height: 168 }} option={pieOption(58, '执行完成率')} /></Card>
-        <Card title="问题整改情况" note={`${finishedRects}/${legacyRects.length} 已整改`}><ReactECharts style={{ height: 168 }} option={pieOption(rectRate, '整改闭环率', '#16a34a')} /></Card>
+          {activeTab === 'todo' ? (
+            <div className="icm-home-scroll" id="home-todo-list" tabIndex={-1} aria-label="待办事项清单">
+              {todoList.length === 0 ? (
+                <div className="icm-empty-inline">当前无待办事项</div>
+              ) : (
+                <DataTable compact
+                  columns={['事项类型', '摘要', '当前节点', '优先级']}
+                  onRowClick={(index) => navigate(todoList[index].route)}
+                  rows={todoList.map((item) => [
+                    item.type,
+                    item.title,
+                    item.node,
+                    <Tag tone={item.priority === '高' ? 'red' : item.priority === '中' ? 'amber' : 'blue'}>{item.priority}</Tag>,
+                  ])}
+                />
+              )}
+            </div>
+          ) : activeTab === 'mine' ? (
+            <div className="icm-home-scroll">
+              <DataTable compact
+                columns={['计划名称', '编制部门']}
+                onRowClick={(index) => navigate(`/plan-workbench?annual=${plans.filter((plan) => plan.creator.id === role.id)[index].id}`)}
+                rows={plans.filter((p) => p.creator.id === role.id).map((p) => [
+                  p.content.name,
+                  p.content.department,
+                ])}
+              />
+            </div>
+          ) : (
+            <div className="icm-home-scroll">
+              <DataTable compact
+                columns={['整改事项', '责任部门', '进度']}
+                onRowClick={(index) => navigate(`/rectify?rect=${rectifications.filter((rectification) => rectification.status === '整改中' || rectification.status === '待方案审批')[index].id}`)}
+                rows={rectifications.filter((r) => r.status === '整改中' || r.status === '待方案审批').map((r) => {
+                  const issue = issues.find((i) => i.id === r.issueId)
+                  return [
+                    r.title,
+                    issue?.owner ?? r.owner,
+                    `${r.progress}%`,
+                  ]
+                })}
+              />
+            </div>
+          )}
+        </Card>
+        <HomeAnalytics projects={visibleProjects} issues={issues} rectifications={rectifications} />
+        <HomeIntelligence />
       </div>
-
-      <Toolbar>
-        <ClipboardCheck size={15} /><span style={{ color: '#607089', fontSize: 12 }}>快捷入口</span>
-        <Button type="default-soft" icon={<Send size={15} />} onClick={() => navigate('/plan-workbench')}>工作计划</Button>
-        <Button type="default-soft" icon={<Inbox size={15} />} onClick={() => navigate('/data-collect')}>材料采集</Button>
-        <Button type="default-soft" icon={<UserCheck size={15} />} onClick={() => navigate('/audit-center')}>审核中心</Button>
-        <Button type="default-soft" icon={<FileText size={15} />} onClick={() => navigate('/report')}>报告中心</Button>
-        <span className="icm-toolbar-spacer" /><Tag tone="blue">{cockpit.alerts.length} 条实时预警</Tag>
-      </Toolbar>
-    </PageFrame>
+    </div></div>
   )
 }

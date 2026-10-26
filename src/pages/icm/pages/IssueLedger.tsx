@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useProjectRecords, useProjectNavigate } from './projectScope'
+import { ProjectCommunication } from './ProjectCommunication'
+import { useIcmDemoRole } from '../AppShell'
+import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ArrowLeft, FileText, GitMerge, GitPullRequestArrow, MessageSquareWarning, Save, Search, ShieldCheck } from 'lucide-react'
 
 import { Button, Card, DataTable, DetailLine, Kpi, PageFrame, Tag, Toolbar, type Tone } from '../components/IcmPageKit'
 import { useWorkflowStore, type WorkflowIssue } from '../store/workflowStore'
+import { daysUntil, isOpenIssue } from './workplaceMetrics'
+import { FindingAssistant } from './FindingAssistant'
 
 function tone(value: string): Tone {
   if (value === '重大' || value === '待确认' || value === '分级审核不通过') return 'red'
@@ -12,17 +17,11 @@ function tone(value: string): Tone {
   return 'blue'
 }
 
-function daysUntil(deadline: string) {
-  if (!deadline || deadline === '待确认') return null
-  const diff = Math.ceil((new Date(deadline).getTime() - new Date('2026-07-23').getTime()) / (1000 * 60 * 60 * 24))
-  return diff
-}
-
 export default function IssueLedger() {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const issues = useWorkflowStore((state) => state.issues)
-  const rectifications = useWorkflowStore((state) => state.rectifications)
+  const navigate = useProjectNavigate()
+  const { role } = useIcmDemoRole()
+  const { issues, rectifications } = useProjectRecords()
+  const [searchParams, setSearchParams] = useSearchParams()
   const saveIssueDraft = useWorkflowStore((state) => state.saveIssueDraft)
   const confirmIssue = useWorkflowStore((state) => state.confirmIssue)
   const submitIssueGradingAudit = useWorkflowStore((state) => state.submitIssueGradingAudit)
@@ -33,29 +32,27 @@ export default function IssueLedger() {
 
   const [selectedId, setSelectedId] = useState(searchParams.get('issue') ?? '')
   const [keyword, setKeyword] = useState('')
-  const [status, setStatus] = useState('全部状态')
+  const status = searchParams.get('status') === 'open' ? '待闭环' : searchParams.get('status') || '全部状态'
+  const level = searchParams.get('level') || '全部等级'
+  const scope = searchParams.get('scope') || 'all'
   const [notice, setNotice] = useState('')
   const [activePanel, setActivePanel] = useState<'draft' | 'grading' | 'objection' | 'merge' | 'lineage'>('draft')
   const [objectionReason, setObjectionReason] = useState('')
   const [mergeCandidateIds, setMergeCandidateIds] = useState<string[]>([])
 
   const selected = issues.find((item) => item.id === selectedId)
-  const [draft, setDraft] = useState<Pick<WorkflowIssue, 'fact' | 'basis' | 'rootCause' | 'impact' | 'suggestion'>>({ fact: '', basis: '', rootCause: '', impact: '', suggestion: '' })
+  const [draft, setDraft] = useState<Pick<WorkflowIssue, 'fact' | 'basis' | 'rootCause' | 'impact' | 'suggestion'>>(selected ? { fact: selected.fact, basis: selected.basis, rootCause: selected.rootCause, impact: selected.impact, suggestion: selected.suggestion } : { fact: '', basis: '', rootCause: '', impact: '', suggestion: '' })
 
-  useEffect(() => {
-    if (selected) {
-      setDraft({ fact: selected.fact, basis: selected.basis, rootCause: selected.rootCause, impact: selected.impact, suggestion: selected.suggestion })
-      setMergeCandidateIds([])
-    }
-  }, [selected])
 
   const filtered = useMemo(() => issues.filter((item) => {
     const matchedKeyword = !keyword.trim() || `${item.id}${item.title}${item.owner}`.includes(keyword.trim())
-    const matchedStatus = status === '全部状态' || item.status === status
-    return matchedKeyword && matchedStatus
-  }), [issues, keyword, status])
+    const matchedStatus = status === '全部状态' || (status === '待闭环' ? isOpenIssue(item) : item.status === status)
+    const matchedLevel = level === '全部等级' || item.level === level
+    const matchedScope = scope !== 'unmerged' || !item.mergedIntoId
+    return matchedKeyword && matchedStatus && matchedLevel && matchedScope
+  }), [issues, keyword, status, level, scope])
 
-  const selectIssue = (id: string) => setSelectedId(id)
+  const selectIssue = (id: string) => { const next = issues.find((i) => i.id === id); if (next) setDraft({ fact: next.fact, basis: next.basis, rootCause: next.rootCause, impact: next.impact, suggestion: next.suggestion }); setMergeCandidateIds([]); setSelectedId(id) }
   const saveDraft = () => {
     if (!selected) return
     saveIssueDraft(selected.id, draft)
@@ -65,7 +62,7 @@ export default function IssueLedger() {
     if (!selected) return
     saveIssueDraft(selected.id, draft)
     const rectificationId = confirmIssue(selected.id)
-    if (!rectificationId) { setNotice('请补全问题事实、制度依据和根因分析'); return }
+    if (!rectificationId) { setNotice('请补全事实、依据、根因、影响、建议、责任人、期限，并登记沟通结论'); return }
     setNotice('问题已确认，等待分级审核')
     setActivePanel('grading')
   }
@@ -87,7 +84,7 @@ export default function IssueLedger() {
   }
   const loadMergeCandidates = () => {
     if (!selected) return
-    const candidates = findMergeCandidates(selected.id)
+    const candidates = findMergeCandidates(selected.id).filter((id) => issues.some((issue) => issue.id === id))
     setMergeCandidateIds(candidates)
     setActivePanel('merge')
   }
@@ -113,8 +110,9 @@ export default function IssueLedger() {
       <PageFrame title="问题台账" subtitle="从审查记录形成问题草稿，经确认、定级、异议处理后派发整改并持续追溯。">
         <Toolbar>
           <div className="icm-modal-search" style={{ maxWidth: 340 }}><Search size={15} /><input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="搜索问题编号、描述或责任部门" /></div>
-          <select className="icm-select" value={status} onChange={(event) => setStatus(event.target.value)}>
+          <select className="icm-select" aria-label="问题状态" value={status} onChange={(event) => setSearchParams((params) => { params.set('status', event.target.value === '待闭环' ? 'open' : event.target.value); return params })}>
             <option>全部状态</option>
+            <option>待闭环</option>
             <option>待确认</option>
             <option>待分级审核</option>
             <option>分级审核不通过</option>
@@ -123,6 +121,10 @@ export default function IssueLedger() {
             <option>已整改</option>
             <option>已关闭</option>
           </select>
+          <select className="icm-select" aria-label="问题等级" value={level} onChange={(event) => setSearchParams((params) => { params.set('level', event.target.value); return params })}>
+            {['全部等级', '重大', '重要', '一般'].map((name) => <option key={name}>{name}</option>)}
+          </select>
+          {scope === 'unmerged' && <Tag tone="gray">已排除合并记录</Tag>}
           <span className="icm-toolbar-spacer" /><Tag tone="blue">共 {filtered.length} 条</Tag>
         </Toolbar>
         <div className="icm-grid cols-6" style={{ marginBottom: 12 }}>
@@ -146,7 +148,7 @@ export default function IssueLedger() {
                 <Tag tone={tone(item.status)}>{item.status}</Tag>,
                 item.owner,
                 item.deadline,
-                <Tag tone={d !== null && d < 0 ? 'red' : 'blue'}>{dayText}</Tag>,
+                <Tag tone={item.status !== '已整改' && item.status !== '已关闭' && d !== null && d < 0 ? 'red' : 'blue'}>{item.status === '已整改' || item.status === '已关闭' ? '已完成整改' : dayText}</Tag>,
                 <button className="icm-link" type="button" onClick={(event) => { event.stopPropagation(); selectIssue(item.id) }}>查看</button>,
               ]
             })}
@@ -183,14 +185,16 @@ export default function IssueLedger() {
 
       <div className="icm-issue-detail-layout">
         <div className="icm-issue-detail-main">
+          <ProjectCommunication key={selected.id} actor={role.name} records={selected.communications ?? []} locked={!canEditDraft} onSave={(communications) => useWorkflowStore.setState((s) => ({issues:s.issues.map((i) => i.id===selected.id?{...i,communications}:i)}))} />
+          {canEditDraft && <div className="project-section project-form-grid"><label>整改责任人或单位<input className="icm-input" aria-label="发现整改责任人" value={selected.owner} onChange={(e) => useWorkflowStore.setState((s) => ({issues:s.issues.map((i) => i.id===selected.id?{...i,owner:e.target.value}:i)}))} /></label><label>整改期限<input className="icm-input" aria-label="发现整改期限" type="date" value={selected.deadline==='待确认'?'':selected.deadline} onChange={(e) => useWorkflowStore.setState((s) => ({issues:s.issues.map((i) => i.id===selected.id?{...i,deadline:e.target.value}:i)}))} /></label></div>}
           <Card title="问题概况" note="问题定级、责任和整改时限">
             <div className="icm-grid cols-3">
               <DetailLine label="问题等级" value={<Tag tone={tone(selected.level)}>{selected.gradedLevel ? `${selected.level}（复核：${selected.gradedLevel}）` : selected.level}</Tag>} />
               <DetailLine label="责任部门" value={selected.owner} />
               <DetailLine label="整改期限" value={selected.deadline} />
-              <DetailLine label="来源底稿" value={<button className="icm-link" type="button" onClick={() => navigate('/workpaper')}>{selected.workpaperId}</button>} />
+              <DetailLine label="来源底稿" value={<button className="icm-link" type="button" onClick={() => navigate('/workpaper?paper=' + selected.workpaperId)}>{selected.workpaperId}</button>} />
               <DetailLine label="取证材料" value={selected.evidenceIds.join(' / ')} />
-              <DetailLine label="整改工单" value={selected.rectificationId ?? '确认后自动生成'} />
+              <DetailLine label="整改工单" value={selected.rectificationId ?? '分级审核通过后生成'} />
               {selected.gradingAuditor ? <DetailLine label="分级审核人" value={selected.gradingAuditor} /> : null}
               {selected.gradingOpinion ? <DetailLine label="分级审核意见" value={selected.gradingOpinion} /> : null}
               {selected.objection.status !== '无' ? <DetailLine label="异议状态" value={<Tag tone={selected.objection.status === '异议成立' ? 'green' : selected.objection.status === '异议不成立' ? 'red' : 'amber'}>{selected.objection.status}</Tag>} /> : null}
@@ -221,6 +225,7 @@ export default function IssueLedger() {
 
           {activePanel === 'draft' ? (
             <Card title={canEditDraft ? '问题定稿' : '问题定稿内容'} note={canEditDraft ? '补齐核心要素后才能确认问题。' : '已确认问题保留定稿版本和来源。'}>
+              <FindingAssistant key={selected.id} issue={selected} draft={draft} editable={canEditDraft} onApply={(suggestion)=>{setDraft((d)=>({...d,suggestion}));setNotice('建议已带入当前草稿，请核对后暂存。')}}/>
               <div className="icm-issue-form-grid">
                 {([['问题事实', 'fact'], ['制度依据', 'basis'], ['根因分析', 'rootCause'], ['影响评估', 'impact'], ['整改建议', 'suggestion']] as const).map(([label, key]) => (
                   <label key={key}>
@@ -242,7 +247,7 @@ export default function IssueLedger() {
                 <DetailLine label="复核人" value={selected.gradingAuditor || '待分配'} />
               </div>
               <p style={{ color: '#607089', fontSize: 13, lineHeight: 1.7 }}>
-                分级审核由审核中心统一办理。提交后，审核人员将依据问题事实、制度依据、金额标准和影响程度对问题等级进行复核。
+                分级审核由审核待办统一办理。提交后，审核人员将依据问题事实、制度依据、金额标准和影响程度对问题等级进行复核。
                 复核结论将自动回写问题台账并驱动整改流程。
               </p>
               {selected.gradingOpinion ? <p style={{ marginTop: 12, padding: 12, background: '#f8fbff', borderRadius: 8, color: '#334155', fontSize: 13 }}><b>复核意见：</b>{selected.gradingOpinion}</p> : null}

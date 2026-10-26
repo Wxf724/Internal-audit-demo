@@ -20,7 +20,9 @@ export type ButtonType =
 
 export type ButtonSize = SizePreset
 
-export interface ButtonProps {
+export interface ButtonProps extends React.AriaAttributes {
+  /** 图标按钮的悬停说明 */
+  title?: string
   /** 按钮内容 */
   children?: ReactNode
   /**
@@ -244,6 +246,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     fullWidth = false,
     className = '',
     onClick,
+    ...accessibilityProps
   } = props
 
   const resolvedType = type || 'primary'
@@ -275,6 +278,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 
   return (
     <HeroButton
+      {...accessibilityProps}
       ref={ref}
       type={htmlType}
       variant={resolveVariant(resolvedType)}

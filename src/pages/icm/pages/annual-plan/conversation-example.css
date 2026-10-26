@@ -1,0 +1,28 @@
+.plan-example-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:18px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-secondary)}
+.plan-example-heading strong{color:var(--foreground);font-size:14px;margin-right:14px}
+.plan-example-layout{display:grid;grid-template-columns:138px minmax(0,1fr);gap:24px;margin-top:18px;align-items:start}
+.plan-example-nav{display:grid;gap:5px;position:sticky;top:0}
+.plan-example-nav button{display:flex;align-items:center;gap:10px;border:0;border-radius:4px;background:transparent;color:var(--text-secondary);padding:13px 10px;text-align:left;font-size:12px;cursor:pointer}
+.plan-example-nav button span{font-variant-numeric:tabular-nums;font-size:11px}
+.plan-example-nav button[aria-current=step]{background:var(--accent-soft);color:var(--accent);font-weight:600;box-shadow:inset 2px 0 var(--accent)}
+.plan-example-nav button:hover{background:var(--bg-hover)}
+.plan-example-content{min-width:0;font-size:13px;line-height:1.75}
+.plan-example-content h2{font-size:16px;font-weight:650;margin:0 0 6px}
+.plan-example-action{color:var(--text-secondary);margin:0 0 22px}
+.plan-example-content .plan-chat-message{margin-bottom:16px}
+.plan-example-content .plan-chat-message.user{margin-left:24px}
+.plan-example-use{margin-top:10px}
+.plan-example-outcome{border-top:1px solid var(--border);margin-top:24px;padding-top:14px;color:var(--text-secondary);font-size:12px}
+.plan-example-tools dl{display:grid;grid-template-columns:130px 1fr;gap:12px 10px;margin:0 0 20px;padding:16px;background:var(--bg-soft)}
+.plan-example-tools dt{color:var(--accent);font-weight:500}.plan-example-tools dd{margin:0;color:var(--text-secondary)}
+.plan-example-resources{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.plan-example-resources button{display:flex;align-items:flex-start;gap:8px;padding:12px 0;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--foreground);text-align:left;font-size:12px;cursor:pointer}
+.plan-example-resources svg{margin-top:3px;flex-shrink:0;color:var(--accent)}.plan-example-resources small{display:block;font-size:11px;color:var(--text-secondary);margin-top:3px}
+.plan-example-result{display:flex;align-items:center;gap:12px;padding:16px;border:1px solid var(--border);border-radius:6px;background:var(--bg-soft)}
+.plan-example-result>svg{color:var(--accent);flex-shrink:0}.plan-example-result>div{flex:1;min-width:0}.plan-example-result strong,.plan-example-result span{display:block}.plan-example-result span{font-size:12px;color:var(--text-secondary);margin-top:3px}
+.plan-example-file{display:flex;align-items:center;gap:12px;padding:16px;background:var(--bg-soft);border:1px dashed var(--border);border-radius:6px}.plan-example-file svg{color:var(--accent);flex-shrink:0}.plan-example-file strong,.plan-example-file span{display:block;overflow-wrap:anywhere}.plan-example-file span{font-size:12px;color:var(--text-secondary)}
+.plan-example-file-text{white-space:pre-wrap;overflow-wrap:anywhere;margin:20px 0}
+.plan-example-versions{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px}.plan-example-versions th,.plan-example-versions td{padding:12px 8px;border-bottom:1px solid var(--border);text-align:left}.plan-example-versions th{background:var(--bg-soft);color:var(--text-secondary)}
+.plan-example-review{padding:18px;background:var(--bg-soft);border-radius:6px}.plan-example-review ul{margin:8px 0 24px;padding-left:18px}.plan-example-review p{margin:8px 0;color:var(--text-secondary)}
+.plan-example-overlay button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:700px){.plan-example-layout{grid-template-columns:1fr;gap:16px}.plan-example-nav{display:flex;overflow:auto;position:static}.plan-example-nav button{flex-shrink:0;padding:12px 10px}.plan-example-resources{grid-template-columns:1fr}.plan-example-tools dl{grid-template-columns:1fr;gap:5px}.plan-example-tools dd{margin-bottom:8px}.plan-example-result{flex-wrap:wrap}.plan-example-result>button{margin-left:auto}.plan-example-heading{flex-wrap:wrap}.plan-example-content .plan-chat-message.user{margin-left:10px}.plan-example-versions td{overflow-wrap:anywhere}.plan-example-heading strong{display:block}}

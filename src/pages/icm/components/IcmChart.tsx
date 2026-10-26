@@ -7,7 +7,8 @@ import ReactECharts from 'echarts-for-react'
  * 大屏看板用 flex/grid 定高布局，ECharts 的 100% 高度在不确定高度的父级里会塌陷，
  * 因此这里用 ResizeObserver 量出真实像素再交给图表，并在容器尺寸变化时主动 resize。
  */
-export function EChart({ option, className, style }: { option: EChartsOption; className?: string; style?: React.CSSProperties }) {
+export interface ChartClick { dataIndex: number; name: string; seriesName: string; value: unknown }
+export function EChart({ option, className, style, onEvents }: { option: EChartsOption; className?: string; style?: React.CSSProperties; onEvents?: Record<string, (event: ChartClick) => void> }) {
   const boxRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<ReactECharts>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -35,6 +36,7 @@ export function EChart({ option, className, style }: { option: EChartsOption; cl
         <ReactECharts
           ref={chartRef}
           option={option}
+          onEvents={onEvents}
           notMerge
           lazyUpdate
           style={{ width: size.width, height: size.height }}

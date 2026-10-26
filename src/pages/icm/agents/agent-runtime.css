@@ -1,0 +1,53 @@
+.icm-agent-runtime{min-width:0;color:#1e293b}
+.icm-agent-runtime-grid{display:grid;grid-template-columns:minmax(300px,.88fr) minmax(0,1.45fr);gap:14px;min-height:390px}
+.icm-agent-runtime-list{min-width:0;border:1px solid #d8e1ec;border-radius:4px;background:#fff;overflow:hidden}
+.icm-agent-runtime-list-head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;min-height:36px;padding:0 12px;background:#f2f5f8;border-bottom:1px solid #d8e1ec;color:#64748b;font-size:11px;font-weight:700}
+.icm-agent-runtime-row{padding:0 10px;border-bottom:1px solid #e6ebf1}
+.icm-agent-runtime-row:last-of-type{border-bottom:0}
+.icm-agent-runtime-row.active{background:#f7faff;box-shadow:inset 3px 0 0 #0f5f9f}
+.icm-agent-runtime-row-main{width:100%;min-height:60px;display:flex;align-items:center;gap:9px;border:0;background:transparent;text-align:left;padding:8px 2px;cursor:pointer;color:inherit}
+.icm-agent-runtime-icon{width:30px;height:30px;flex:0 0 30px;display:grid;place-items:center;border:1px solid #d5e1ef;border-radius:4px;background:#eef4f9;color:#0f5f9f}
+.icm-agent-runtime-row-copy{flex:1;min-width:0;display:grid;gap:4px}
+.icm-agent-runtime-row-copy strong{display:flex;align-items:center;gap:7px;min-width:0;color:#172033;font-size:12px;line-height:1.35}
+.icm-agent-runtime-row-copy strong em{font-style:normal;color:#718096;font-size:10px;font-weight:700}
+.icm-agent-runtime-row-copy>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b;font-size:11px}
+.icm-agent-runtime-chevron{flex:0 0 auto;color:#94a3b8}
+.icm-agent-runtime-row-action{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 2px 8px 41px;color:#64748b;font-size:10px}
+.icm-agent-runtime-launch{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid #dfe7f0;background:#fbfcfe;padding:9px 11px}
+.icm-agent-runtime-launch>span{display:inline-flex;align-items:center;gap:6px;color:#475569;font-size:11px;font-weight:700;white-space:nowrap}
+.icm-agent-runtime-launch>div{display:flex;justify-content:flex-end;gap:4px;flex-wrap:wrap}
+.icm-agent-runtime-launch button{display:inline-flex;align-items:center;gap:3px;min-height:25px;padding:0 6px;border:1px solid #cbd8e6;border-radius:3px;background:#fff;color:#0f5f9f;font-size:10px;font-weight:700;cursor:pointer}
+.icm-agent-runtime-launch button:hover{background:#eef4f9}
+.icm-agent-runtime-detail{min-width:0;border:1px solid #d8e1ec;border-radius:4px;background:#fff;padding:14px}
+.icm-agent-runtime-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:11px;border-bottom:1px solid #e6ebf1}
+.icm-agent-runtime-eyebrow{color:#0f5f9f;font-size:10px;font-weight:800;letter-spacing:0}
+.icm-agent-runtime-detail-head h3{margin:4px 0;color:#0f172a;font-size:17px;line-height:1.35}
+.icm-agent-runtime-detail-head p{margin:0;color:#64748b;font-size:11px;line-height:1.5}
+.icm-agent-runtime-meta{display:flex;flex-wrap:wrap;gap:6px 14px;padding:9px 0;color:#64748b;font-size:10px}
+.icm-agent-runtime-meta span{display:inline-flex;align-items:center;gap:4px}
+.icm-agent-runtime-section{margin-top:9px}
+.icm-agent-runtime-section-title{display:flex;align-items:center;gap:7px;margin-bottom:7px;color:#334155;font-size:12px;font-weight:800}
+.icm-agent-runtime-section-title span{color:#718096;font-size:10px;font-weight:600}
+.icm-agent-runtime-refs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px}
+.icm-agent-runtime-refs>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;align-items:center;border:1px solid #e1e8f0;border-radius:3px;padding:7px 8px;background:#fbfcfe}
+.icm-agent-runtime-refs span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#475569;font-size:10px}
+.icm-agent-runtime-refs strong{color:#0f5f9f;font-size:10px}
+.icm-agent-runtime-refs code{grid-column:1/-1;color:#8794a5;font-size:9px}
+.icm-agent-runtime-artifacts{display:grid;gap:7px}
+.icm-agent-runtime-artifact{min-width:0;border:1px solid #dfe7f0;border-radius:3px;padding:9px;background:#fff}
+.icm-agent-runtime-artifact-head,.icm-agent-runtime-artifact-head>div{display:flex;align-items:center;justify-content:space-between;gap:7px;min-width:0}
+.icm-agent-runtime-artifact-head>div{justify-content:flex-start;flex-wrap:wrap}
+.icm-agent-runtime-artifact-head strong{color:#172033;font-size:11px;line-height:1.4}
+.icm-agent-runtime-artifact p{margin:6px 0 8px;color:#64748b;font-size:10px;line-height:1.55}
+.icm-agent-runtime-artifact-foot{display:flex;justify-content:space-between;align-items:flex-start;gap:9px;border-top:1px solid #edf1f5;padding-top:7px}
+.icm-agent-runtime-artifact-foot>span{min-width:0;color:#718096;font-size:9px;line-height:1.5;overflow-wrap:anywhere}
+.icm-agent-runtime-artifact-foot>div{display:flex;justify-content:flex-end;align-items:center;gap:5px;flex-wrap:wrap;flex:0 0 auto}
+.icm-agent-runtime-accepted{color:#0f5f9f;font-size:9px}
+.icm-agent-runtime-guardrail{margin-top:9px;border-left:2px solid #b7791f;background:#fffaf0;padding:7px 9px;color:#795b22;font-size:10px;line-height:1.5}
+.icm-agent-runtime-empty,.icm-agent-runtime-detail-empty{display:flex;align-items:center;justify-content:center;gap:8px;min-height:100px;color:#718096;font-size:12px}
+.icm-agent-runtime-detail-empty{min-height:260px;border:1px dashed #cbd8e6;border-radius:4px;background:#fbfcfe}
+.icm-agent-runtime-message{display:flex;align-items:center;gap:6px;margin:9px 0;padding:8px;border:1px solid #f0cac5;background:#fff6f5;color:#9b2c22;font-size:11px}
+.icm-agent-runtime-compact .icm-agent-runtime-grid{grid-template-columns:minmax(260px,.78fr) minmax(0,1.7fr);min-height:320px}
+.icm-agent-runtime-compact .icm-agent-runtime-detail{padding:10px}
+@media(max-width:1000px){.icm-agent-runtime-grid,.icm-agent-runtime-compact .icm-agent-runtime-grid{grid-template-columns:1fr}.icm-agent-runtime-list{max-height:380px;overflow:auto}}
+@media(max-width:600px){.icm-agent-runtime-detail-head{display:block}.icm-agent-runtime-detail-head>.tag{margin-top:8px}.icm-agent-runtime-artifact-foot{display:grid}.icm-agent-runtime-artifact-foot>div{justify-content:flex-start}}

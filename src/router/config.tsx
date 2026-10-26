@@ -4,20 +4,21 @@ import { Navigate } from 'react-router-dom'
 
 const IcmShell = lazy(() => import('../pages/icm'))
 const Workplace = lazy(() => import('../pages/icm/pages/Workplace'))
+const ProjectCenter = lazy(() => import('../pages/icm/pages/ProjectCenter'))
+const AuditProjectWorkspace = lazy(() => import('../pages/icm/pages/AuditProjectWorkspace'))
 const PlanWorkbench = lazy(() => import('../pages/icm/pages/PlanWorkbench'))
 const DispatchCenter = lazy(() => import('../pages/icm/pages/DispatchCenter'))
 const TaskCenter = lazy(() => import('../pages/icm/pages/TaskCenter'))
-const StandardLibrary = lazy(() => import('../pages/icm/pages/StandardLibrary'))
-const KnowledgeBase = lazy(() => import('../pages/icm/pages/KnowledgeBase'))
+const ResourceHub = lazy(() => import('../pages/icm/pages/ResourceHub'))
 const DataCollectCenter = lazy(() => import('../pages/icm/pages/DataCollectCenter'))
-const ReviewWorkbench = lazy(() => import('../pages/icm/pages/ReviewWorkbench'))
+const ReviewWorkbench = lazy(() => import('../pages/icm/pages/IntelligentReview'))
 const WalkthroughWorkbench = lazy(() => import('../pages/icm/pages/WalkthroughWorkbench'))
 const Workpaper = lazy(() => import('../pages/icm/pages/Workpaper'))
 const EvidenceLedger = lazy(() => import('../pages/icm/pages/EvidenceLedger'))
 const IssueLedger = lazy(() => import('../pages/icm/pages/IssueLedger'))
-const RectifyBoard = lazy(() => import('../pages/icm/pages/RectifyBoard'))
+const RectifyBoard = lazy(() => import('../pages/icm/pages/RectificationLedger'))
 const AuditCenter = lazy(() => import('../pages/icm/pages/AuditCenter'))
-const ReportCenter = lazy(() => import('../pages/icm/pages/ReportCenter'))
+const ReportCenter = lazy(() => import('../pages/icm/pages/RectificationReports'))
 const VisualCockpit = lazy(() => import('../pages/icm/pages/VisualCockpit'))
 const Login = lazy(() => import('../pages/login'))
 const NotFound = lazy(() => import('../pages/NotFound'))
@@ -26,11 +27,13 @@ import { defaultRoute, icmRoutes } from '../pages/icm/routeMeta'
 
 const pageByPath: Record<string, ReactNode> = {
   '/workplace': <Workplace />,
+  '/projects': <ProjectCenter />,
   '/plan-workbench': <PlanWorkbench />,
   '/dispatch-center': <DispatchCenter />,
   '/task-center': <TaskCenter />,
-  '/standard-library': <StandardLibrary />,
-  '/knowledge-base': <KnowledgeBase />,
+  '/audit-resources': <ResourceHub />,
+  '/standard-library': <Navigate replace to="/audit-resources?category=programs" />,
+  '/knowledge-base': <Navigate replace to="/audit-resources?category=basis" />,
   '/data-collect': <DataCollectCenter />,
   '/review-workbench': <ReviewWorkbench />,
   '/walkthrough-workbench': <WalkthroughWorkbench />,
@@ -45,8 +48,9 @@ const pageByPath: Record<string, ReactNode> = {
 
 const icmChildren = icmRoutes.map((route) => ({
   path: route.path.slice(1),
-  element: pageByPath[route.path],
+  element: <>{pageByPath[route.path]}</>,
 }))
+icmChildren.push({ path: 'projects/:projectId', element: <AuditProjectWorkspace /> })
 
 const routes: RouteObject[] = [
   {
@@ -60,8 +64,9 @@ const routes: RouteObject[] = [
   ...icmRoutes.map((route) => ({
     path: route.path,
     element: <IcmShell />,
-    children: [{ index: true, element: pageByPath[route.path] }],
+    children: [{ index: true, element: <>{pageByPath[route.path]}</> }],
   })),
+  { path: '/projects/:projectId', element: <IcmShell />, children: [{ index: true, element: <AuditProjectWorkspace /> }] },
   { path: '/login', element: <Login /> },
   { path: '*', element: <NotFound /> },
 ]

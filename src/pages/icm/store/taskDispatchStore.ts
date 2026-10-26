@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 import { tasks } from '../data'
 import type { Task } from '../data/types'
@@ -21,7 +22,7 @@ interface TaskDispatchState {
   confirmEntry: (taskId: string) => void
 }
 
-export const useTaskDispatchStore = create<TaskDispatchState>((set) => ({
+export const useTaskDispatchStore = create<TaskDispatchState>()(persist((set) => ({
   tasks,
   stageByTask: initialStage,
   enteredTaskIds: ['TK-001'],
@@ -41,4 +42,4 @@ export const useTaskDispatchStore = create<TaskDispatchState>((set) => ({
     stageByTask: { ...state.stageByTask, [taskId]: 'entry' },
     tasks: state.tasks.map((task) => task.id === taskId ? { ...task, status: '进行中', progress: Math.max(task.progress, 5) } : task),
   })),
-}))
+}), { name: 'internal-audit-project-tasks-v1', version: 1 }))

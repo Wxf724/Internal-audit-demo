@@ -1,9 +1,9 @@
 import { type ChangeEvent, useMemo, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
+import { useProjectScope, useProjectNavigate } from './projectScope'
 import { Bot, BookOpen, Eye, FileDown, FileText, FileUp, GitPullRequestArrow, Search, Settings2, X } from 'lucide-react'
 
 import { Button, Card, DataTable, DetailLine, PageFrame, Tag, type Tone } from '../components/IcmPageKit'
-import { useWorkflowStore } from '../store/workflowStore'
 
 type TaskId = 'purchase' | 'contract' | 'payment' | 'supplier'
 type Finding = { title: string; level: string; rule: string; confidence: number; basis: string; evidence: string }
@@ -56,8 +56,14 @@ function toImportedAgent(value: unknown): AgentModel | null {
 }
 
 export default function ReviewWorkbench() {
+  const { projectId } = useProjectScope()
+  return projectId && projectId !== 'AUD-PL-2026-001' ? <PageFrame title="智能审查" subtitle="当前项目的审查任务与结果。"><Card title="审查任务"><div className="icm-empty-inline">尚无已关联的审查任务，请在项目智能分析中发起分析。</div></Card></PageFrame> : <ReviewContent />
+}
+
+function ReviewContent() {
+  const { projectId } = useProjectScope()
   const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
+  const navigate = useProjectNavigate()
   const importInputRef = useRef<HTMLInputElement>(null)
   const view = searchParams.get('view') ?? 'execute'
   const [taskId, setTaskId] = useState<TaskId>('purchase')
@@ -73,7 +79,6 @@ export default function ReviewWorkbench() {
   const [configTarget, setConfigTarget] = useState<AgentModel | null>(null)
   const [configDraft, setConfigDraft] = useState<Pick<AgentModel, 'baseModel' | 'threshold' | 'promptVersion'>>({ baseModel: '', threshold: 80, promptVersion: '' })
   const [agentNotice, setAgentNotice] = useState('')
-  const createIssueDraft = useWorkflowStore((state) => state.createIssueDraft)
 
   const task = reviewTasks.find((item) => item.id === taskId) ?? reviewTasks[0]
   const visibleTasks = reviewTasks.filter((item) => {
@@ -173,8 +178,8 @@ export default function ReviewWorkbench() {
       </div>
       <div className="icm-review-finding-drawer-foot">
         <Button type="default-soft" icon={<BookOpen size={14} />} onClick={() => setBasisTarget(previewFinding)}>核验依据</Button>
-        <Button type="primary-soft" icon={<FileUp size={14} />} onClick={() => navigate(`/workpaper?source=review&finding=${encodeURIComponent(previewFinding.title)}`)}>形成审查记录</Button>
-        <Button type="primary" icon={<GitPullRequestArrow size={14} />} onClick={() => { const issueId = createIssueDraft({ title: previewFinding.title, level: previewFinding.level as '重大' | '重要' | '一般', owner: task.unit.includes('西北') ? '采购管理部' : '责任部门', workpaperId: '待生成审查记录', evidenceIds: [previewFinding.evidence], basis: previewFinding.basis }); setPreviewFinding(null); navigate(`/issues?issue=${issueId}`) }}>转问题草稿</Button>
+        <Button type="primary-soft" icon={<FileUp size={14} />} onClick={() => navigate(projectId ? `/projects/${projectId}?tab=execution` : '/projects')}>选择程序编制底稿</Button>
+        <Button type="primary" icon={<GitPullRequestArrow size={14} />} onClick={() => navigate(projectId ? `/projects/${projectId}?tab=execution&section=papers` : '/projects')}>查看底稿与复核结论</Button>
       </div>
     </aside> : null}
 
