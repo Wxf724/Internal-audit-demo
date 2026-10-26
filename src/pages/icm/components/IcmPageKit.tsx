@@ -68,7 +68,7 @@ const css = `
 .icm-chunk-source{color:#748299;font-size:11px}
 
   /* Enterprise workbench system overrides. */
-  .icm-page{min-height:100%;max-width:1680px;margin:0 auto;color:#1e293b;font-family:"Microsoft YaHei","Noto Sans SC",Arial,sans-serif}
+  .icm-page{min-height:100%;width:100%;max-width:none;min-width:0;margin:0;color:#1e293b;font-family:"Microsoft YaHei","Noto Sans SC",Arial,sans-serif}
   .icm-page-header{min-height:72px;align-items:center;margin:0 0 16px;padding:0 0 16px;border-bottom:1px solid #dbe3ed}
   .icm-page-header>div:first-child{min-width:0;padding-left:14px;border-left:3px solid #0f4c81}
   .icm-page-title{color:#0f172a;font-size:22px;font-weight:800;line-height:1.35}

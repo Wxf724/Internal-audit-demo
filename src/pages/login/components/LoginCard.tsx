@@ -32,7 +32,7 @@ export function LoginCard(props: LoginCardProps) {
       <div className="text-center mb-8">
         <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center bg-[#0F52BA]/8 rounded-2xl">
           <img
-            src="https://static.readdy.ai/image/ef95b83776c013c4a1c3d783d82ec693/790fa4d64762eea3565205595e6b025d.png"
+            src="/images/original-brand.png"
             alt="乾知AI"
             className="w-10 h-10 object-contain"
           />

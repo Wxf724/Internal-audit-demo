@@ -1,0 +1,340 @@
+[
+  {
+    "kind": "dev",
+    "route": "/workplace",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main",
+        "width": 1920,
+        "x": 0,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "icm-page",
+        "width": 1680,
+        "x": 120,
+        "maxWidth": "1680px",
+        "zoom": "1",
+        "display": "flex"
+      }
+    ],
+    "images": [
+      {
+        "src": "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80",
+        "width": 0
+      }
+    ]
+  },
+  {
+    "kind": "dev",
+    "route": "/plan-workbench",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main",
+        "width": 1920,
+        "x": 0,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "icm-page",
+        "width": 1680,
+        "x": 120,
+        "maxWidth": "1680px",
+        "zoom": "1",
+        "display": "block"
+      }
+    ],
+    "images": []
+  },
+  {
+    "kind": "dev",
+    "route": "/projects",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main",
+        "width": 1920,
+        "x": 0,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "icm-page",
+        "width": 1680,
+        "x": 120,
+        "maxWidth": "1680px",
+        "zoom": "1",
+        "display": "block"
+      }
+    ],
+    "images": []
+  },
+  {
+    "kind": "dev",
+    "route": "/rectify",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main",
+        "width": 1920,
+        "x": 0,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "rect-compact",
+        "width": 1872,
+        "x": 24,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "icm-page",
+        "width": 1680,
+        "x": 120,
+        "maxWidth": "1680px",
+        "zoom": "1",
+        "display": "block"
+      }
+    ],
+    "images": []
+  },
+  {
+    "kind": "dev",
+    "route": "/audit-resources",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main",
+        "width": 1696,
+        "x": 224,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "icm-page",
+        "width": 1648,
+        "x": 248,
+        "maxWidth": "1680px",
+        "zoom": "1",
+        "display": "block"
+      }
+    ],
+    "images": []
+  },
+  {
+    "kind": "dev",
+    "route": "/cockpit",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main-no-scroll",
+        "width": 1920,
+        "x": 0,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "flex"
+      },
+      {
+        "selector": "audit-analysis",
+        "width": 1884,
+        "x": 18,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "flex"
+      }
+    ],
+    "images": []
+  },
+  {
+    "kind": "package",
+    "route": "/workplace",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main",
+        "width": 1920,
+        "x": 0,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "icm-page",
+        "width": 1680,
+        "x": 120,
+        "maxWidth": "1680px",
+        "zoom": "1",
+        "display": "flex"
+      }
+    ],
+    "images": [
+      {
+        "src": "/audit-news.svg",
+        "width": 900
+      }
+    ]
+  },
+  {
+    "kind": "package",
+    "route": "/plan-workbench",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main",
+        "width": 1920,
+        "x": 0,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "icm-page",
+        "width": 1680,
+        "x": 120,
+        "maxWidth": "1680px",
+        "zoom": "1",
+        "display": "block"
+      }
+    ],
+    "images": []
+  },
+  {
+    "kind": "package",
+    "route": "/projects",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main",
+        "width": 1920,
+        "x": 0,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "icm-page",
+        "width": 1680,
+        "x": 120,
+        "maxWidth": "1680px",
+        "zoom": "1",
+        "display": "block"
+      }
+    ],
+    "images": []
+  },
+  {
+    "kind": "package",
+    "route": "/rectify",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main",
+        "width": 1920,
+        "x": 0,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "rect-compact",
+        "width": 1872,
+        "x": 24,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "icm-page",
+        "width": 1680,
+        "x": 120,
+        "maxWidth": "1680px",
+        "zoom": "1",
+        "display": "block"
+      }
+    ],
+    "images": []
+  },
+  {
+    "kind": "package",
+    "route": "/audit-resources",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main",
+        "width": 1696,
+        "x": 224,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "block"
+      },
+      {
+        "selector": "icm-page",
+        "width": 1648,
+        "x": 248,
+        "maxWidth": "1680px",
+        "zoom": "1",
+        "display": "block"
+      }
+    ],
+    "images": []
+  },
+  {
+    "kind": "package",
+    "route": "/cockpit",
+    "width": 1920,
+    "root": "16px",
+    "body": 1920,
+    "items": [
+      {
+        "selector": "icm-main-no-scroll",
+        "width": 1920,
+        "x": 0,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "flex"
+      },
+      {
+        "selector": "audit-analysis",
+        "width": 1884,
+        "x": 18,
+        "maxWidth": "none",
+        "zoom": "1",
+        "display": "flex"
+      }
+    ],
+    "images": []
+  }
+]

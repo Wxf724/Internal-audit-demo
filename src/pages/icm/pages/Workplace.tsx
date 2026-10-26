@@ -24,9 +24,9 @@ const notices = [
 ]
 
 const news = [
-  { title: '集团召开年度内控检查工作推进会', date: '2026-07-12', image: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80' },
-  { title: '采购管理专项检查经验在系统内发布', date: '2026-07-10', image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=80' },
-  { title: '内控监督部组织检查组业务培训', date: '2026-07-08', image: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80' },
+  { title: '集团召开年度内控检查工作推进会', date: '2026-07-12', image: '/images/news-meeting.jpg' },
+  { title: '采购管理专项检查经验在系统内发布', date: '2026-07-10', image: '/images/news-experience.jpg' },
+  { title: '内控监督部组织检查组业务培训', date: '2026-07-08', image: '/images/news-training.jpg' },
 ]
 
 const groupNews = [

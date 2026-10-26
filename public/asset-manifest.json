@@ -1,0 +1,67 @@
+{
+  "note": "Original linked image bytes preserved without editing; fonts stored locally with their license.",
+  "assets": [
+    {
+      "source": "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80",
+      "file": "images/news-meeting.jpg",
+      "bytes": 87942,
+      "sha256": "a811bd2b9e5ae8eee0f700ca150927cac3f078318814aad435c68a47b1280b2e"
+    },
+    {
+      "source": "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=80",
+      "file": "images/news-experience.jpg",
+      "bytes": 166487,
+      "sha256": "bc9275b639f4796f0674aaa6558cfe1242031841933dc7c742a86ae34f09b8d5"
+    },
+    {
+      "source": "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80",
+      "file": "images/news-training.jpg",
+      "bytes": 193804,
+      "sha256": "fca96cdcdfb59c81f3c2336501190f84bf3ecdacd49350930b38e80fa376b72f"
+    },
+    {
+      "source": "https://static.readdy.ai/image/ef95b83776c013c4a1c3d783d82ec693/790fa4d64762eea3565205595e6b025d.png",
+      "file": "images/original-brand.png",
+      "bytes": 1554187,
+      "sha256": "68ee5c41d0c5e9d42559a326359bb9341b3e2bbaaed2b58314576e1e3c5a2ca5"
+    },
+    {
+      "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG-3FnYw.ttf",
+      "file": "vendor/noto-sans-sc/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG-3FnYw.woff2",
+      "bytes": 4248328,
+      "sha256": "da20c2e53e9b4b28654931c6ad22c254853df295f41a45734944909517832ab3",
+      "originalSha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+      "formatNote": "Lossless WOFF2 webfont encoding; glyph order preserved."
+    },
+    {
+      "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf",
+      "file": "vendor/noto-sans-sc/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.woff2",
+      "bytes": 4174820,
+      "sha256": "45d2b689355323bd118fcb3c726740cdf79baf167ba3a17f6801162a6a70469e",
+      "originalSha256": "450625c8d46ab3df97b7904ded955ec2746d17ec76740cb1e91d1ba63a0f89af",
+      "formatNote": "Lossless WOFF2 webfont encoding; glyph order preserved."
+    },
+    {
+      "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGwHCnYw.ttf",
+      "file": "vendor/noto-sans-sc/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGwHCnYw.woff2",
+      "bytes": 4260236,
+      "sha256": "742face731bd3fe41147433f36c0040d282f05df0068751b787a448470106cc0",
+      "originalSha256": "7c941d13e1f99a7c78fc89ef734b9322404804573a936085f7a910b47b8bb984",
+      "formatNote": "Lossless WOFF2 webfont encoding; glyph order preserved."
+    },
+    {
+      "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGzjCnYw.ttf",
+      "file": "vendor/noto-sans-sc/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGzjCnYw.woff2",
+      "bytes": 4295276,
+      "sha256": "ad823b808e202d5246b1ffb19cca8f2de0b3e1514bf66f88ba685c9184aaa107",
+      "originalSha256": "0066a522a1ac007c1d72bc4fccb114f80ff7294641c78cead9715bd14d43b9ea",
+      "formatNote": "Lossless WOFF2 webfont encoding; glyph order preserved."
+    },
+    {
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/OFL.txt",
+      "file": "vendor/noto-sans-sc/OFL.txt",
+      "bytes": 4388,
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+    }
+  ]
+}
